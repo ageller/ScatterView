@@ -1,0 +1,44 @@
+<html>
+
+	<head>
+		<title>WebGL Scatter Viewer</title>
+
+		<link rel="stylesheet" type="text/css" href="css/index.css" />
+		
+<!-- three.js resources -->		
+		<script src="resources/three.min.js"></script>
+		<script src="resources/Detector.js"></script>
+		<script src="resources/TrackballControls.js"></script>
+		<script src="resources/KeyboardState.js"></script>
+		<script src="resources/THREEx.FullScreen.js"></script>
+		<script src="resources/THREEx.WindowResize.js"></script>
+		<script src="resources/THREE.ConstantSpline.js"></script>
+		<script src="resources/THREE.MeshLine.js"></script>
+		<script src="resources/StereoEffect.js"></script>
+
+<!-- GUI -->
+		<script src="resources/dat.gui.js"></script>
+
+<!-- d3 -->
+		<script src="resources/d3.v4.10.2.min.js"></script>
+
+
+	</head>
+
+	<body onload="WebGLStart()">
+
+		<div id="ContentContainer" style="position: absolute; left:0px; top:0px"></div>
+
+		<!-- shaders -->
+	    <script src="shaders/vertex.glsl.js"></script>
+    	<script src="shaders/fragment.glsl.js"></script>
+
+		<!-- the main attraction -->
+		<script src="js/init.js"></script>
+		<script src="js/renderAll.js"></script>
+	    <script src="js/draw.js"></script>
+
+
+	</body>
+
+</html>
