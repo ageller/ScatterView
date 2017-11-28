@@ -237,3 +237,5 @@ function WebGLStart(){
 
 }
 
+WebGLStart();
+
