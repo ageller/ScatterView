@@ -185,11 +185,17 @@ function defineParams(){
 }
 
 
-function setMaxTime(tol = 0.1){
+function setMaxTime(tol = 0.1, Nignore = 50){
+	if (tol <= 0){
+		for (var i = 0; i< parts.time.length; i++){
+			maxTime = parts.time[i] - 1e-10;
+		}
+		return
+	}
 	var dt = 0.,
 		dtSum = 0.,
-		dtAve = 0.,
-		dtAve0 = 0.,
+		dtAve = 1.e-10,
+		dtAve0 = 1.e-10,
 		dtAveDiff = 0.;
 
     for (var i = 0; i< parts.time.length; i++){
@@ -201,9 +207,9 @@ function setMaxTime(tol = 0.1){
     		dtAveDiff = Math.abs(dtAve0 - dtAve)/dtAve0;
     	}
 
-        if (parts.time[i] > maxTime && dtAveDiff < tol) maxTime = parts.time[i] - 0.01; 
+        if (parts.time[i] > maxTime && dtAveDiff < tol) maxTime = parts.time[i] - 1e-10; 
         
-        if (dtAveDiff > tol && maxTime > 0) break;
+        if (dtAveDiff > tol && maxTime > 0 && i > Nignore) break;
     }
 
 }
@@ -222,9 +228,10 @@ function WebGLStart(){
 			parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
 		})
 
-		setMaxTime();
-	    defineParams();
-	    initInterps();
+
+		setMaxTime(tol = -1); // required for Fewbody, but maybe not for Spera code
+		defineParams();
+		initInterps();
 		init();
 
 	//draw everything
