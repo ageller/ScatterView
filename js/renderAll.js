@@ -22,4 +22,21 @@ function render() {
 
 	params.renderer.render( scene, camera );
 
+	if (params.captureCanvas){
+		var screenWidth = window.innerWidth;
+		var screenHeight = window.innerHeight;
+		var aspect = screenWidth / screenHeight;
+		
+		params.renderer.setSize(params.captureWidth, params.captureHeight);
+		camera.aspect = params.captureWidth / params.captureHeight;;
+		camera.updateProjectionMatrix();
+		params.renderer.render( scene, camera );
+
+		capturer.capture( params.renderer.domElement );
+
+		params.renderer.setSize(screenWidth, screenHeight);
+		camera.aspect = aspect;
+		camera.updateProjectionMatrix();
+		params.renderer.render( scene, camera );
+	}
 }

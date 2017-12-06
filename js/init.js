@@ -1,6 +1,6 @@
 //all global variables
 
-var container, scene, MWscene, MWInnerScene, camera, renderer, controls, effect;
+var container, scene, camera, renderer, controls, effect, composer, capturer;
 var keyboard = new KeyboardState();
 
 var parts = null;
@@ -17,6 +17,9 @@ var params;
 
 var gui = new dat.GUI({width:300});
 
+var fov = 45;
+var zmin = 1.;
+var zmax = 5.e10;
 
 function init() {
 	// scene
@@ -25,10 +28,7 @@ function init() {
 	// camera
 	var screenWidth = window.innerWidth;
 	var screenHeight = window.innerHeight;
-	var fov = 45;
 	var aspect = screenWidth / screenHeight;
-	var zmin = 1.;
-	var zmax = 5.e10;
 	camera = new THREE.PerspectiveCamera( fov, aspect, zmin, zmax);
 	scene.add(camera);
 
@@ -41,10 +41,15 @@ function init() {
 
 
 	// renderer
-	if ( Detector.webgl )
-		renderer = new THREE.WebGLRenderer( {antialias:true} );
-	else
+	if ( Detector.webgl ) {
+		renderer = new THREE.WebGLRenderer( {
+			antialias:true,
+			preserveDrawingBuffer: true , //so that we can save the image
+			} );
+	} else {
+		console.log("no WebGL")
 		renderer = new THREE.CanvasRenderer(); 
+	}
 	renderer.setSize(screenWidth, screenHeight);
 	container = document.getElementById('ContentContainer');
 	container.appendChild( renderer.domElement );
@@ -68,6 +73,9 @@ function init() {
 	effect.autoClear = false;
 	params.renderer = renderer;
 
+	//for video capture
+	composer = new THREE.EffectComposer(params.renderer);
+
 	camera.up.set(0, -1, 0);
 
 }
@@ -78,23 +86,93 @@ function defineParams(){
     ParamsInit = function() {
 
 
-    	this.timeYr = 0.;
-    	this.maxTime = maxTime;
-        this.timeStepUnit = 0.;
-        this.timeStepFac = 1.;
-        this.timeStep = parseFloat(this.timeStepUnit)*parseFloat(this.timeStepFac);
+		this.timeYr = 0.;
+		this.maxTime = maxTime;
+		this.timeStepUnit = 0.;
+		this.timeStepFac = 1.;
+		this.timeStep = parseFloat(this.timeStepUnit)*parseFloat(this.timeStepFac);
 
-    	this.lineAlpha = 1.;
-    	this.lineWidth = 0.001;
-    	this.lineLengthYr = this.maxTime/10.;
-    	this.pointsSize = 10.;
-    	this.pointsAlpha = 1.;
+		this.lineAlpha = 1.;
+		this.lineWidth = 0.001;
+		this.lineLengthYr = this.maxTime/10.;
+		this.pointsSize = 10.;
+		this.pointsAlpha = 1.;
 
-	    this.renderer = null;
-	    this.stereo = false;
-	    this.friction = 0.2;
-	    this.zoomSpeed = 1.;
-	    this.stereoSep = 0.064;
+		this.renderer = null;
+		this.stereo = false;
+		this.friction = 0.2;
+		this.zoomSpeed = 1.;
+		this.stereoSep = 0.064;
+		this.filename = "test.png";
+		this.captureWidth = 1024;
+		this.captureHeight = 1024;
+		this.captureCanvas = false;
+		this.videoFramerate = 30;
+		this.videoDuration = 2;
+		this.videoFormat = 'png';
+
+	    this.screenshot = function(){
+			var imgData, imgNode;
+    		var strDownloadMime = "image/octet-stream";
+			var strMime = "image/png";
+			var screenWidth = window.innerWidth;
+			var screenHeight = window.innerHeight;
+			var aspect = screenWidth / screenHeight;
+
+			var saveFile = function (strData, filename) {
+				var link = document.createElement('a');
+				if (typeof link.download === 'string') {
+					document.body.appendChild(link); //Firefox requires the link to be in the body
+					link.download = filename;
+					link.href = strData;
+					link.click();
+					document.body.removeChild(link); //remove the link when done
+				} else {
+					location.replace(uri);
+				}
+			}
+
+
+			try {
+				//resize
+				params.renderer.setSize(params.captureWidth, params.captureHeight);
+				camera.aspect = params.captureWidth / params.captureHeight;;
+				camera.updateProjectionMatrix();
+				params.renderer.render( scene, camera );
+
+				//save image
+				imgData = params.renderer.domElement.toDataURL(strMime);
+				saveFile(imgData.replace(strMime, strDownloadMime), params.filename);
+
+				//back to original size
+				params.renderer.setSize(screenWidth, screenHeight);
+				camera.aspect = aspect;
+				camera.updateProjectionMatrix();
+				params.renderer.render( scene, camera );
+
+			} catch (e) {
+				console.log(e);
+				return;
+			}
+
+		}
+
+		this.recordVideo = function(){
+
+			params.captureCanvas = true;
+			capturer = new CCapture( { 
+				format: params.videoFormat, 
+				workersPath: 'resources/CCapture/',
+				framerate: params.videoFramerate,
+				name: params.filename,
+				timeLimit: params.videoDuration,
+				autoSaveTime: params.videoDuration,
+				verbose: true,
+			} );
+
+			capturer.start();
+
+		}
 
 	    this.redraw = function() {
 	    	params.timeYr = parseFloat(params.timeYr);
@@ -156,28 +234,39 @@ function defineParams(){
 
 	gui.remember(params);
 
-	gui.add( params, 'timeYr', 0, params.maxTime).listen().onChange(params.redraw);
-    gui.add( params, 'timeStepUnit', { "None": 0,  "Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
-    gui.add( params, 'timeStepFac', 0, 1e4 ).onChange(params.updateTimeStep);
+	var timeGUI = gui.addFolder('Time controls');
+	timeGUI.add( params, 'timeYr', 0, params.maxTime).listen().onChange(params.redraw);
+    timeGUI.add( params, 'timeStepUnit', { "None": 0,  "Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
+    timeGUI.add( params, 'timeStepFac', 0, 1e4 ).onChange(params.updateTimeStep);
 
-    gui.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
-    gui.add( params, 'lineLengthYr', 0, params.maxTime).onChange( params.redraw );
-    gui.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
-    gui.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
-    gui.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
+	var pointLineGUI = gui.addFolder('Points and Lines');
+    pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
+    pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime).onChange( params.redraw );
+    pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
+    pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
+    pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
 
-
+	var colorGUI = gui.addFolder('Colors');
 	partsKeys.forEach( function(p,i) {
 		params[p+"ColorUse"] = parts[p].color;
 		params[p+"Color"] = [255.*parts[p].color.r, 255.*parts[p].color.g, 255.*parts[p].color.b];
 
-		gui.addColor( params, p+"Color").onChange(params.updateColors);
+		colorGUI.addColor( params, p+"Color").onChange(params.updateColors);
 
 	});
-	console.log(params.colors)
 
-    var cameraGUI = gui.addFolder('Camera');
-    cameraGUI.add( params, 'fullscreen');
+	var captureGUI = gui.addFolder('Capture');
+	captureGUI.add( params, 'filename');
+	captureGUI.add( params, 'captureWidth');
+	captureGUI.add( params, 'captureHeight');
+	captureGUI.add( params, 'videoDuration');
+	captureGUI.add( params, 'videoFramerate');
+    captureGUI.add( params, 'videoFormat', {"gif":"gif", "jpg":"jpg", "png":"png"} )
+	captureGUI.add( params, 'screenshot');
+	captureGUI.add( params, 'recordVideo');
+
+	var cameraGUI = gui.addFolder('Camera');
+	cameraGUI.add( params, 'fullscreen');
     cameraGUI.add( params, 'stereo').onChange(params.updateStereo);
     cameraGUI.add( params, 'stereoSep',0,1).onChange(params.updateStereo);
     cameraGUI.add( params, 'friction',0,1).onChange(params.updateFriction);
@@ -229,7 +318,8 @@ function WebGLStart(){
 		})
 
 
-		setMaxTime(tol = -1); // required for Fewbody, but maybe not for Spera code
+		//setMaxTime(tol = -1); // required for Fewbody, but maybe not for Spera code
+		setMaxTime();
 		defineParams();
 		initInterps();
 		init();

@@ -1,7 +1,10 @@
+<!--to create video from frames using ffmpeg : ffmpeg -i %7d.png video.mp4 -->
+
 <html>
 
 	<head>
 		<title>WebGL Scatter Viewer</title>
+        <link rel="shortcut icon" href="Scatter_icon.png">  
 
 		<link rel="stylesheet" type="text/css" href="css/index.css" />
 		
@@ -15,6 +18,12 @@
 		<script src="resources/THREE.ConstantSpline.js"></script>
 		<script src="resources/THREE.MeshLine.js"></script>
 		<script src="resources/StereoEffect.js"></script>
+		<script src="resources/EffectComposer.js"></script>
+		<script src="resources/CopyShader.js"></script>
+		<script src="resources/ShaderPass.js"></script>
+
+<!-- ccapture, for video capture -->
+		<script src="resources/CCapture/CCapture.all.min.js"></script>
 
 <!-- GUI -->
 		<script src="resources/dat.gui.js"></script>
