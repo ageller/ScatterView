@@ -19,8 +19,8 @@ function initInterps(){
 
 		for (var j=0; j<3; j++){
 			coord = [];
-			for (var i=0; i< parts[p].Coordinates.length; i++){
-				coord.push(parts[p].Coordinates[i][j])
+			for (var i=0; i< parts[p].r.length; i++){
+				coord.push(parts[p].r[i][j])
 			}
 			parts[p].CoordInterp.push( new THREE.LinearInterpolant(
 			    new Float32Array(parts.time),
@@ -45,7 +45,7 @@ function initInterps(){
 
 function drawParts()
 {
-	var geo, geoP, material, mesh, positions, index, pNow;
+	var geo, geoP, material, mesh, positions, index, pNow, iTime;
 
 	partsKeys.forEach( function(p,i) {
 
@@ -62,14 +62,14 @@ function drawParts()
 	        geo.vertices.push(new THREE.Vector3(pNow[0], pNow[1], pNow[2] ));
 		}
 
-		parts[p].Coordinates.forEach(function(c, j) {
+		parts[p].r.forEach(function(c, j) {
 			if (parts.time[j] <= params.timeYr && parts.time[j] >= (params.timeYr - params.lineLengthYr)){
 				geo.vertices.push(new THREE.Vector3(c[0], c[1], c[2] ))
 			}
 		});
 
 		iTime = parts.iTimeInterp.evaluate(params.timeYr)[0];
-		if (parts[p].Coordinates.length >= iTime){
+		if (parts[p].r.length >= iTime){
 		//add one additional vertex interpolated to the exact time
 			pNow = [];
 			for (var j=0; j<3; j++) pNow.push(parts[p].CoordInterp[j].evaluate(params.timeYr)[0]);

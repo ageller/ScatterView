@@ -21,13 +21,13 @@ var fov = 45;
 var zmin = 1.;
 var zmax = 5.e10;
 
-function init() {
+function init(canvas) {
 	// scene
 	scene = new THREE.Scene();
 
 	// camera
-	var screenWidth = window.innerWidth;
-	var screenHeight = window.innerHeight;
+	var screenWidth = canvas.innerWidth;
+	var screenHeight = canvas.innerHeight;
 	var aspect = screenWidth / screenHeight;
 	camera = new THREE.PerspectiveCamera( fov, aspect, zmin, zmax);
 	scene.add(camera);
@@ -41,43 +41,55 @@ function init() {
 
 
 	// renderer
-	if ( Detector.webgl ) {
-		renderer = new THREE.WebGLRenderer( {
+	if ( Detector.webgl ) { //for WebGL
+
+		renderer = new THREE.WebGLRenderer({
 			antialias:true,
 			preserveDrawingBuffer: true , //so that we can save the image
-			} );
-	} else {
-		console.log("no WebGL")
-		renderer = new THREE.CanvasRenderer(); 
+		});
+
+		container = document.getElementById('ContentContainer');
+		container.appendChild( renderer.domElement );
+
+		// events
+		THREEx.WindowResize(renderer, camera);
+		THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+
+		// controls
+		controls = new THREE.TrackballControls( camera, renderer.domElement );
+		controls.dynamicDampingFactor = params.friction;
+	 	controls.zoomSpeed = params.zoomSpeed;
+
+		//stereo
+		effect = new THREE.StereoEffect( renderer );
+		effect.setAspect(1.);
+		effect.setEyeSeparation(params.stereoSep);
+
+
+		//renderer.autoClear = false;
+		effect.autoClear = false;
+		params.renderer = renderer;
+
+		//for video capture
+		composer = new THREE.EffectComposer(params.renderer);
+
+	} else { //for Qt
+
+		renderer = new THREE.Canvas3DRenderer({ 
+			canvas: canvas, 
+			antialias: true, 
+			devicePixelRatio: canvas.devicePixelRatio 
+		});
+		//renderer = new THREE.CanvasRenderer(); 
 	}
+
 	renderer.setSize(screenWidth, screenHeight);
-	container = document.getElementById('ContentContainer');
-	container.appendChild( renderer.domElement );
 
-	// events
-	THREEx.WindowResize(renderer, camera);
-	THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
-
-	// controls
-	controls = new THREE.TrackballControls( camera, renderer.domElement );
-	controls.dynamicDampingFactor = params.friction;
- 	controls.zoomSpeed = params.zoomSpeed;
-
-	//stereo
-	effect = new THREE.StereoEffect( renderer );
-	effect.setAspect(1.);
-	effect.setEyeSeparation(params.stereoSep);
-
-
-	//renderer.autoClear = false;
-	effect.autoClear = false;
-	params.renderer = renderer;
-
-	//for video capture
-	composer = new THREE.EffectComposer(params.renderer);
 
 	camera.up.set(0, -1, 0);
 
+//draw everything
+	drawParts();
 }
 
 
@@ -232,45 +244,47 @@ function defineParams(){
 
     params = new ParamsInit();
 
-	gui.remember(params);
+	if ( Detector.webgl ) {
+		gui.remember(params);
 
-	var timeGUI = gui.addFolder('Time controls');
-	timeGUI.add( params, 'timeYr', 0, params.maxTime).listen().onChange(params.redraw);
-    timeGUI.add( params, 'timeStepUnit', { "None": 0,  "Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
-    timeGUI.add( params, 'timeStepFac', 0, 1e4 ).onChange(params.updateTimeStep);
+		var timeGUI = gui.addFolder('Time controls');
+		timeGUI.add( params, 'timeYr', 0, params.maxTime).listen().onChange(params.redraw);
+		timeGUI.add( params, 'timeStepUnit', { "None": 0,  "Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
+		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).onChange(params.updateTimeStep);
 
-	var pointLineGUI = gui.addFolder('Points and Lines');
-    pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
-    pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime).onChange( params.redraw );
-    pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
-    pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
-    pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
+		var pointLineGUI = gui.addFolder('Points and Lines');
+		pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
+		pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime).onChange( params.redraw );
+		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
+		pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
+		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
 
-	var colorGUI = gui.addFolder('Colors');
-	partsKeys.forEach( function(p,i) {
-		params[p+"ColorUse"] = parts[p].color;
-		params[p+"Color"] = [255.*parts[p].color.r, 255.*parts[p].color.g, 255.*parts[p].color.b];
+		var colorGUI = gui.addFolder('Colors');
+		partsKeys.forEach( function(p,i) {
+			params[p+"ColorUse"] = parts[p].color;
+			params[p+"Color"] = [255.*parts[p].color.r, 255.*parts[p].color.g, 255.*parts[p].color.b];
 
-		colorGUI.addColor( params, p+"Color").onChange(params.updateColors);
+			colorGUI.addColor( params, p+"Color").onChange(params.updateColors);
 
-	});
+		});
 
-	var captureGUI = gui.addFolder('Capture');
-	captureGUI.add( params, 'filename');
-	captureGUI.add( params, 'captureWidth');
-	captureGUI.add( params, 'captureHeight');
-	captureGUI.add( params, 'videoDuration');
-	captureGUI.add( params, 'videoFramerate');
-    captureGUI.add( params, 'videoFormat', {"gif":"gif", "jpg":"jpg", "png":"png"} )
-	captureGUI.add( params, 'screenshot');
-	captureGUI.add( params, 'recordVideo');
+		var captureGUI = gui.addFolder('Capture');
+		captureGUI.add( params, 'filename');
+		captureGUI.add( params, 'captureWidth');
+		captureGUI.add( params, 'captureHeight');
+		captureGUI.add( params, 'videoDuration');
+		captureGUI.add( params, 'videoFramerate');
+		captureGUI.add( params, 'videoFormat', {"gif":"gif", "jpg":"jpg", "png":"png"} )
+		captureGUI.add( params, 'screenshot');
+		captureGUI.add( params, 'recordVideo');
 
-	var cameraGUI = gui.addFolder('Camera');
-	cameraGUI.add( params, 'fullscreen');
-    cameraGUI.add( params, 'stereo').onChange(params.updateStereo);
-    cameraGUI.add( params, 'stereoSep',0,1).onChange(params.updateStereo);
-    cameraGUI.add( params, 'friction',0,1).onChange(params.updateFriction);
-    cameraGUI.add( params, 'zoomSpeed',0.01,5).onChange(params.updateZoom);
+		var cameraGUI = gui.addFolder('Camera');
+		cameraGUI.add( params, 'fullscreen');
+		cameraGUI.add( params, 'stereo').onChange(params.updateStereo);
+		cameraGUI.add( params, 'stereoSep',0,1).onChange(params.updateStereo);
+		cameraGUI.add( params, 'friction',0,1).onChange(params.updateFriction);
+		cameraGUI.add( params, 'zoomSpeed',0.01,5).onChange(params.updateZoom);
+	}
 }
 
 
@@ -303,36 +317,65 @@ function setMaxTime(tol = 0.1, Nignore = 50){
 
 }
 
-function WebGLStart(){
-
+function loadData(callback, canvas){
     d3.json("data/ScatterParts.json",  function(partsjson) {
-        parts = partsjson; 
+    	//reorganize
+    	parts = {};
 
-	//initialize
-		partsKeys = Object.keys(parts);
-		partsKeys.pop("time")
-		
+    	times = Object.keys(partsjson);
+    	pkeys = Object.keys(partsjson[times[0]]);
+    	partsKeys = [];
+
+		pkeys.forEach(function(k,i){
+			if (k.substring(0,8) == "Particle"){
+				partsKeys.push(k)
+				parts[k] = {};
+				Object.keys(partsjson[times[0]][k]).forEach(function(p,j){
+					parts[k][p] = []
+				});
+			} else {
+				parts[k] = [];
+			}
+		});
+		parts.time = [];
+		var foo;
+		times.forEach(function(t,i){
+			parts.time.push(parseFloat(t));
+			if (t != ""){
+				pkeys.forEach(function(k,j){
+					if (partsKeys.includes(k)){
+						Object.keys(parts[k]).forEach(function(p){
+							parts[k][p].push(partsjson[t][k][p]);
+						});
+					} else {
+						parts[k].push(partsjson[t][k])
+					}
+				});
+			}
+		});
+
 		//random colors
 		partsKeys.forEach( function(p,i) {
 			parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
 		})
 
-
 		//setMaxTime(tol = -1); // required for Fewbody, but maybe not for Spera code
 		setMaxTime();
 		defineParams();
 		initInterps();
-		init();
 
-	//draw everything
-		drawParts();
-
-	//begin the animation
-		animate();
-
+		callback(canvas);
 	});
-
 }
 
-WebGLStart();
+function WebGLStart(canvas){
+
+	init(canvas);
+
+//begin the animation
+	animate();
+}
+
+//////this will load the data, and then start the WebGL rendering
+loadData(WebGLStart, window);
 

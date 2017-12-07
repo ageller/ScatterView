@@ -12,13 +12,14 @@ function update(time){
 		console.log(camera.position, camera.rotation)
 	}
 	
+	params.updateTime();
+
 	controls.update();
 }
 
 
 function render() {
 
-	params.updateTime();
 
 	params.renderer.render( scene, camera );
 
