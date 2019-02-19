@@ -32,7 +32,7 @@ function init(canvas) {
 	camera = new THREE.PerspectiveCamera( fov, aspect, zmin, zmax);
 	scene.add(camera);
 
-	camera.position.set(0,0,-50);
+	camera.position.set(0,0,-75);
 
 	camera.lookAt(scene.position);	
 
