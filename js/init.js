@@ -307,6 +307,9 @@ function setMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
 		dtAve0 = 1.e-10,
 		dtAveDiff = 0.;
 
+	minTime = parts.time[0];
+	maxTime = parts.time[0];
+	
     for (var i = 0; i< parts.time.length; i++){
     	if (i < parts.time.length - 1){
     		dt = parts.time[i+1] - parts.time[i];
@@ -315,9 +318,9 @@ function setMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
     		dtAve = dtSum / i;
     		dtAveDiff = Math.abs(dtAve0 - dtAve)/dtAve0;
     	}
-
         if (parts.time[i] > maxTime && dtAveDiff < tol) maxTime = parts.time[i] - 1e-10; 
         if (parts.time[i] < minTime && dtAveDiff < tol) minTime = parts.time[i] - 1e-10; 
+		console.log(parts.time[i], minTime, dtAveDiff, tol)
         
         if (dtAveDiff > tol && maxTime > 0 && i > Nignore) break;
     }
