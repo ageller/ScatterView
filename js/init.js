@@ -367,11 +367,30 @@ function loadData(callback, canvas){
 		})
 
 		//setMaxTime(tol = -1); // required for Fewbody, but maybe not for Spera code
-		setMinMaxTime();
-		defineParams();
-		initInterps();
+		let step1 = new Promise(function(resolve, reject) {
+			setMinMaxTime();
+			resolve('done');
+			reject('error');
+		});
+		let step2 = new Promise(function(resolve, reject) {
+			defineParams();
+			resolve('done');
+			reject('error');
+		});
+		let step3 = new Promise(function(resolve, reject) {
+			initInterps();
+			resolve('done');
+			reject('error');
+		});			
+		
+		step1.then(function(value){
+			step2.then(function(value){
+				step3.then(function(value){
+					callback(canvas);
+				},function(error){})
+			},function(error){})
+		},function(error){})
 
-		callback(canvas);
 	});
 }
 
