@@ -320,7 +320,6 @@ function setMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
     	}
         if (parts.time[i] > maxTime && dtAveDiff < tol) maxTime = parts.time[i] - 1e-10; 
         if (parts.time[i] < minTime && dtAveDiff < tol) minTime = parts.time[i] - 1e-10; 
-		console.log(parts.time[i], minTime, dtAveDiff, tol)
         
         if (dtAveDiff > tol && maxTime > 0 && i > Nignore) break;
     }
