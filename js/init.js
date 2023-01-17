@@ -366,9 +366,8 @@ function loadData(callback, canvas){
 			parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
 		})
 
-		//setMaxTime(tol = -1); // required for Fewbody, but maybe not for Spera code
 		let step1 = new Promise(function(resolve, reject) {
-			setMinMaxTime();
+			setMinMaxTime(tol = -1);
 			resolve('done');
 			reject('error');
 		});
