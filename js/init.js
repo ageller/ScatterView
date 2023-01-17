@@ -290,15 +290,17 @@ function defineParams(){
 }
 
 
-function setMinMaxTime(tol = 0.1, Nignore = 50){
-	if (tol <= 0){
-		for (var i = 0; i< parts.time.length; i++){
-			var checkTime = parts.time[i] - 1e-10;
-			if (checkTime > maxTime) maxTime = checkTime;
-			if (checkTime < minTime) minTime = checkTime;
-		}
-		return
+function setMinMaxTime(){
+	for (var i = 0; i< parts.time.length; i++){
+		var checkTime = parts.time[i] - 1e-10;
+		if (checkTime > maxTime) maxTime = checkTime;
+		if (checkTime < minTime) minTime = checkTime;
 	}
+}
+
+// if the times don't match up exactly and we need to set a tolerance, use this
+function setMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
+
 	var dt = 0.,
 		dtSum = 0.,
 		dtAve = 1.e-10,
@@ -367,7 +369,7 @@ function loadData(callback, canvas){
 		})
 
 		let step1 = new Promise(function(resolve, reject) {
-			setMinMaxTime(tol = -1);
+			setMinMaxTime();
 			resolve('done');
 			reject('error');
 		});
