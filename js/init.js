@@ -317,19 +317,8 @@ function setMaxTime(tol = 0.1, Nignore = 50){
 
 }
 
-function fileExists(url)
-{
-	var http = new XMLHttpRequest();
-	http.open('HEAD', url, false);
-	http.send();
-	return http.status != 404;
-}
-
 function loadData(callback, canvas){
 	var filename = "data/ScatterParts.json";
-
-	// check if a user supplied data set exists
-	if (fileExists("data/userData.json")) filename = "data/userData.json";
 
     d3.json(filename,  function(partsjson) {
     	//reorganize
