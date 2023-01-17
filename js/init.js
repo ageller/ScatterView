@@ -99,7 +99,7 @@ function defineParams(){
     ParamsInit = function() {
 
 
-		this.timeYr = 0.;
+		this.timeYr = minTime;
 		this.maxTime = maxTime;
 		this.minTime = minTime;
 		this.timeStepUnit = 0.;
@@ -298,7 +298,7 @@ function setMinMaxTime(){
 	}
 }
 
-// if the times don't match up exactly and we need to set a tolerance, use this
+// Fewbody jumps to very large times at the end.  This will fix that
 function setMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
 
 	var dt = 0.,
@@ -369,7 +369,7 @@ function loadData(callback, canvas){
 		})
 
 		let step1 = new Promise(function(resolve, reject) {
-			setMinMaxTime();
+			setMinMaxTimeTolerance();
 			resolve('done');
 			reject('error');
 		});
