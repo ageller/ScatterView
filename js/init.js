@@ -10,6 +10,7 @@ var partsMesh = {};
 var loaded = false;
 
 var maxTime = 0;
+var minTime = 1e10;
 
 //defined in WebGLStart, after data is loaded
 var ParamsInit;
@@ -100,6 +101,7 @@ function defineParams(){
 
 		this.timeYr = 0.;
 		this.maxTime = maxTime;
+		this.minTime = minTime;
 		this.timeStepUnit = 0.;
 		this.timeStepFac = 1.;
 		this.timeStep = parseFloat(this.timeStepUnit)*parseFloat(this.timeStepFac);
@@ -248,13 +250,13 @@ function defineParams(){
 		gui.remember(params);
 
 		var timeGUI = gui.addFolder('Time controls');
-		timeGUI.add( params, 'timeYr', 0, params.maxTime).listen().onChange(params.redraw);
+		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).listen().onChange(params.redraw);
 		timeGUI.add( params, 'timeStepUnit', { "None": 0,  "Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
 		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).onChange(params.updateTimeStep);
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
 		pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
-		pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime).onChange( params.redraw );
+		pointLineGUI.add( params, 'lineLengthYr', params.minTime, params.maxTime).onChange( params.redraw );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
@@ -288,10 +290,12 @@ function defineParams(){
 }
 
 
-function setMaxTime(tol = 0.1, Nignore = 50){
+function setMinMaxTime(tol = 0.1, Nignore = 50){
 	if (tol <= 0){
 		for (var i = 0; i< parts.time.length; i++){
-			maxTime = parts.time[i] - 1e-10;
+			var checkTime = parts.time[i] - 1e-10;
+			if (checkTime > maxTime) maxTime = checkTime;
+			if (checkTime < minTime) minTime = checkTime;
 		}
 		return
 	}
@@ -311,6 +315,7 @@ function setMaxTime(tol = 0.1, Nignore = 50){
     	}
 
         if (parts.time[i] > maxTime && dtAveDiff < tol) maxTime = parts.time[i] - 1e-10; 
+        if (parts.time[i] < minTime && dtAveDiff < tol) minTime = parts.time[i] - 1e-10; 
         
         if (dtAveDiff > tol && maxTime > 0 && i > Nignore) break;
     }
@@ -362,7 +367,7 @@ function loadData(callback, canvas){
 		})
 
 		//setMaxTime(tol = -1); // required for Fewbody, but maybe not for Spera code
-		setMaxTime();
+		setMinMaxTime();
 		defineParams();
 		initInterps();
 
