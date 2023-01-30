@@ -18,6 +18,14 @@ function update(time){
 		params.timeYr -= params.timeStep;
 		params.redraw();
 	}
+	if ( keyboard.pressed("S") && keyboard.down("A")  ) {
+		params.timeStepFac *= 2;
+		params.updateTimeStep();
+	}
+	if ( keyboard.pressed("S") && keyboard.down("D")  ) {
+		params.timeStepFac /= 2;
+		params.updateTimeStep();
+	}
 
 	params.updateTime();
 

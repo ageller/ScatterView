@@ -103,7 +103,7 @@ function defineParams(){
 		this.maxTime = maxTime;
 		this.minTime = minTime;
 		this.timeStepUnit = 1.;
-		this.timeStepFac = 1.;
+		this.timeStepFac = (1.).toFixed(4);
 		this.timeStep = parseFloat(this.timeStepUnit)*parseFloat(this.timeStepFac);
 		this.play = false;
 
@@ -253,7 +253,7 @@ function defineParams(){
 		var timeGUI = gui.addFolder('Time controls');
 		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).listen().onChange(params.redraw);
 		timeGUI.add( params, 'timeStepUnit', {"Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
-		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).onChange(params.updateTimeStep);
+		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).listen().onChange(params.updateTimeStep);
 		timeGUI.add( params, 'play');
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
