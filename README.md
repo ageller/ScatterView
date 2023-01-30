@@ -7,6 +7,7 @@ A WebGL tool to display output from scattering simulations
 A live version is available [here](https://ageller.github.io/Scatter_WebGL/).
 
 ## Keyboard Shortcuts
+*Note: I have noticed some strange behavior with my bluetooth keyboard not sending combined key presses in certain instances, e.g. when wanting "T" + "right" + "up"*
 
 - SPACE: play/pause
 - hold "T" + left/right arrow keys: moves time forward/backwards by one itme step
