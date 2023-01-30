@@ -254,7 +254,7 @@ function defineParams(){
 		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).listen().onChange(params.redraw);
 		timeGUI.add( params, 'timeStepUnit', {"Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
 		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).listen().onChange(params.updateTimeStep);
-		timeGUI.add( params, 'play');
+		timeGUI.add( params, 'play').listen();
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
 		pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );

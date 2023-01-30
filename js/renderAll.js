@@ -10,6 +10,7 @@ function update(time){
 	if ( keyboard.down("C") ) console.log(camera.position, camera.rotation)
 
 	// control the time
+	if  (keyboard.down("space")) params.play = !params.play;
 	if ( keyboard.pressed("S") && keyboard.pressed("right") && params.timeYr < params.maxTime) {
 		params.timeYr += params.timeStep;
 		params.redraw();
