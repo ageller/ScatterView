@@ -11,19 +11,19 @@ function update(time){
 
 	// control the time
 	if  (keyboard.down("space")) params.play = !params.play;
-	if ( keyboard.pressed("S") && keyboard.pressed("right") && params.timeYr < params.maxTime) {
+	if ( keyboard.pressed("T") && keyboard.pressed("right") && params.timeYr < params.maxTime) {
 		params.timeYr += params.timeStep;
 		params.redraw();
 	}
-	if ( keyboard.pressed("S") && keyboard.pressed("left")  && params.timeYr > params.minTime) {
+	if ( keyboard.pressed("T") && keyboard.pressed("left")  && params.timeYr > params.minTime) {
 		params.timeYr -= params.timeStep;
 		params.redraw();
 	}
-	if ( keyboard.pressed("S") && keyboard.down("A")  ) {
+	if ( keyboard.pressed("T") && keyboard.down("up")  ) {
 		params.timeStepFac *= 2;
 		params.updateTimeStep();
 	}
-	if ( keyboard.pressed("S") && keyboard.down("D")  ) {
+	if ( keyboard.pressed("T") && keyboard.down("down")  ) {
 		params.timeStepFac /= 2;
 		params.updateTimeStep();
 	}

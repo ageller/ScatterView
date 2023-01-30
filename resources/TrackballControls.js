@@ -3,9 +3,13 @@
  * @author Mark Lundin 	/ http://mark-lundin.com
  * @author Simone Manini / http://daron1337.github.io
  * @author Luca Antiga 	/ http://lantiga.github.io
+ * editted by AMG
  */
 
 THREE.TrackballControls = function ( object, domElement ) {
+
+	//added by AMG to more easily keep track of keyboard presses
+	var keyboard = new KeyboardState();
 
 	var _this = this;
 	var STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM_PAN: 4 };
@@ -34,6 +38,9 @@ THREE.TrackballControls = function ( object, domElement ) {
 	this.maxDistance = Infinity;
 
 	this.keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/ ];
+
+	// added by AMG to work with keyboard object
+	this.keysNames = [ 'A', 'S', 'D' ];
 
 	// internals
 
@@ -329,6 +336,24 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 		}
 
+		// added by AMG to enable more keyboard controls
+		keyboard.update();
+		if (keyboard.pressed(_this.keysNames[STATE.ZOOM])){
+			if (keyboard.pressed("up")) _zoomStart.y +=  0.025 * this.zoomSpeed;
+			if (keyboard.pressed("down")) _zoomStart.y -=  0.025 * this.zoomSpeed;
+		}
+		if (keyboard.pressed(_this.keysNames[STATE.PAN])){
+			if (keyboard.pressed("up")) _panStart.y +=  0.025 * this.panSpeed;
+			if (keyboard.pressed("down")) _panStart.y -=  0.025 * this.panSpeed;
+			if (keyboard.pressed("left")) _panStart.x +=  0.025 * this.panSpeed;
+			if (keyboard.pressed("right")) _panStart.x -=  0.025 * this.panSpeed;
+		}
+		if (keyboard.pressed(_this.keysNames[STATE.ROTATE])){
+			if (keyboard.pressed("up")) _moveCurr.y +=  0.025 * this.rotateSpeed;
+			if (keyboard.pressed("down")) _moveCurr.y -=  0.025 * this.rotateSpeed;
+			if (keyboard.pressed("left")) _moveCurr.x +=  0.025 * this.rotateSpeed;
+			if (keyboard.pressed("right")) _moveCurr.x -=  0.025 * this.rotateSpeed;
+		}
 	};
 
 	this.reset = function () {
@@ -376,7 +401,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 			_state = STATE.PAN;
 
-		}
+		} 
 
 	}
 
