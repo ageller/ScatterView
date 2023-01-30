@@ -7,11 +7,18 @@ function animate(time) {
 
 function update(time){
 	keyboard.update();
-	if ( keyboard.down("C") ) 
-	{	  
-		console.log(camera.position, camera.rotation)
+	if ( keyboard.down("C") ) console.log(camera.position, camera.rotation)
+
+	// control the time
+	if ( keyboard.pressed("S") && keyboard.pressed("right") && params.timeYr < params.maxTime) {
+		params.timeYr += params.timeStep;
+		params.redraw();
 	}
-	
+	if ( keyboard.pressed("S") && keyboard.pressed("left")  && params.timeYr > params.minTime) {
+		params.timeYr -= params.timeStep;
+		params.redraw();
+	}
+
 	params.updateTime();
 
 	controls.update();
