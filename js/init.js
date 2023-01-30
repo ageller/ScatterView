@@ -252,7 +252,7 @@ function defineParams(){
 
 		var timeGUI = gui.addFolder('Time controls');
 		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).listen().onChange(params.redraw);
-		timeGUI.add( params, 'timeStepUnit', {"Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
+		timeGUI.add( params, 'timeStepUnit', {"Hour": 1./8760., "Day": 1./365.2425, "Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
 		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).listen().onChange(params.updateTimeStep);
 		timeGUI.add( params, 'play').listen();
 
