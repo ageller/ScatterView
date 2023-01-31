@@ -82,7 +82,7 @@ function drawParts()
 	                color: {value: params[p+"ColorUse"]},
 	                alpha: {value: params.pointsAlpha},
 	                oID: {value: 0},
-	                uVertexScale: {value: parseFloat(params.pointsSize)},
+	                uVertexScale: {value: parseFloat(params[p+"PointSize"])},
 	            },
 
 	            vertexShader: myVertexShader,

@@ -207,10 +207,8 @@ function defineParams(){
 	    	}
 	    }
 
-	    this.updateColors = function() {
-	    	partsKeys.forEach( function(p,i) {
-	    		params[p+"ColorUse"] = new THREE.Color(params[p+"Color"][0]/255., params[p+"Color"][1]/255., params[p+"Color"][2]/255.);
-	    	});
+	    this.updateColor = function(p) {
+	    	params[p+"ColorUse"] = new THREE.Color(params[p+"Color"][0]/255., params[p+"Color"][1]/255., params[p+"Color"][2]/255.);
 	    	params.redraw();
 	    }
 
@@ -274,15 +272,19 @@ function defineParams(){
 		pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
 		pointLineGUI.add( params, 'lineLengthYr', params.minTime, params.maxTime).onChange( params.redraw );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
-		pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
+		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
+		partsKeys.forEach( function(p,i) {
+			params[p+"PointSize"] = params.pointsSize;
+			pointLineGUI.add( params, p+"PointSize", 0, 100).onChange(params.redraw);
+		});
 
 		var colorGUI = gui.addFolder('Colors');
 		partsKeys.forEach( function(p,i) {
 			params[p+"ColorUse"] = parts[p].color;
 			params[p+"Color"] = [255.*parts[p].color.r, 255.*parts[p].color.g, 255.*parts[p].color.b];
 
-			colorGUI.addColor( params, p+"Color").onChange(params.updateColors);
+			colorGUI.addColor( params, p+"Color").onChange(function(){params.updateColor(p)});
 
 		});
 
