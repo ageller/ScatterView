@@ -112,6 +112,7 @@ function defineParams(){
 		this.lineAlpha = 1.;
 		this.lineWidth = 0.001;
 		this.lineLengthYr = this.maxTime/10.;
+		this.lineLength = this.lineLengthYr;
 		this.pointsSize = 10.;
 		this.pointsAlpha = 1.;
 
@@ -193,8 +194,16 @@ function defineParams(){
 
 		}
 
+		this.updateLine = function(){
+			params.lineLengthYr = parseFloat(params.timeStepUnit)*parseFloat(params.lineLength);
+			params.lineGUI.__max = params.maxTime/parseFloat(params.timeStepUnit);
+			params.lineGUI.updateDisplay();
+			params.redraw();
+		}
+
 	    this.redraw = function() {
 	    	params.timeYr = parseFloat(params.timeYr);
+
     		clearPartsMesh();
     		if (params.timeYr > 0) drawParts();
 	    }
@@ -270,7 +279,7 @@ function defineParams(){
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
 		pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
-		pointLineGUI.add( params, 'lineLengthYr', params.minTime, params.maxTime).onChange( params.redraw );
+		params.lineGUI = pointLineGUI.add( params, 'lineLength', 0, params.maxTime).onChange( params.updateLine );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
 		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
