@@ -5,7 +5,7 @@ var keyboard = new KeyboardState();
 
 var parts = null;
 var partsKeys;
-var partsMesh = {};
+var partsMesh;
 
 var loaded = false;
 
@@ -38,7 +38,7 @@ function init(canvas) {
 	camera.lookAt(scene.position);	
 
 	var dist = scene.position.distanceTo(camera.position);
-	var vFOV = THREE.Math.degToRad( camera.fov ); // convert vertical fov to radians
+	var vFOV = THREE.MathUtils.degToRad( camera.fov ); // convert vertical fov to radians
 
 
 	// renderer
@@ -74,7 +74,7 @@ function init(canvas) {
 		params.renderer = renderer;
 
 		//for video capture
-		composer = new THREE.EffectComposer(params.renderer);
+		// composer = new THREE.EffectComposer(params.renderer);
 
 	} else { //for Qt
 
@@ -92,7 +92,8 @@ function init(canvas) {
 	camera.up.set(0, -1, 0);
 
 //draw everything
-	drawParts();
+	initPointsMesh();
+	// still need to initialize the line mesh
 }
 
 
@@ -202,10 +203,10 @@ function defineParams(){
 		}
 
 	    this.redraw = function() {
+			// this is a misnomer, might be wise to update it to something like updateParticlePositions (but redraw is used a lot!)
 	    	params.timeYr = parseFloat(params.timeYr);
 
-    		clearPartsMesh();
-    		if (params.timeYr > 0) drawParts();
+			if (params.timeYr > 0) updateParts();
 	    }
 
 	    this.updateTime = function() {

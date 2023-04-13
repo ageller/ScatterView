@@ -1,11 +1,12 @@
 var myFragmentShader = `
-precision mediump float;
+// precision mediump float;
 
-uniform vec3 color;
+varying vec4 vColor;
+
 uniform float alpha;
 
 void main(void) {
-    gl_FragColor = vec4(color, alpha);
+    gl_FragColor = vec4(vColor.rgb, vColor.a*alpha);
 
     // Get the distance vector from the center
     vec2 fromCenter = abs(gl_PointCoord - vec2(0.5));
