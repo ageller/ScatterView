@@ -112,9 +112,12 @@ function defineParams(){
 		this.timeStep = parseFloat(this.timeStepUnit)*parseFloat(this.timeStepFac);
 		this.play = false;
 
+		this.partsMinTime = {};
+		this.partsMaxTime = {};
+
 		this.lineAlpha = 1.;
 		this.lineWidth = 1;
-		this.lineLengthYr = this.maxTime/10.;
+		this.lineLengthYr = (this.maxTime - this.minTime)/this.timeStepUnit
 		this.lineLength = this.lineLengthYr;
 		this.pointsSize = 10.;
 		this.pointsAlpha = 1.;
@@ -199,8 +202,6 @@ function defineParams(){
 
 		this.updateLine = function(){
 			params.lineLengthYr = parseFloat(params.timeStepUnit)*parseFloat(params.lineLength);
-			params.lineGUI.__max = params.maxTime/parseFloat(params.timeStepUnit);
-			params.lineGUI.updateDisplay();
 			params.redraw();
 		}
 
@@ -273,6 +274,7 @@ function defineParams(){
 	}
 
     params = new ParamsInit();
+	setParticleMinMaxTime();
 
 	if ( Detector.webgl ) {
 		gui.remember(params);
@@ -285,7 +287,7 @@ function defineParams(){
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
 		pointLineGUI.add( params, 'lineWidth', 1, 10).onChange( params.redraw );
-		params.lineGUI = pointLineGUI.add( params, 'lineLength', 0, params.maxTime).onChange( params.updateLine );
+		params.lineGUI = pointLineGUI.add( params, 'lineLength', 0, params.maxTime - params.minTime).onChange( params.updateLine );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
 		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
@@ -325,7 +327,7 @@ function defineParams(){
 }
 
 
-function setMinMaxTime(){
+function setGlobalMinMaxTime(){
 	for (var i = 0; i< parts.time.length; i++){
 		var checkTime = parts.time[i] - 1e-10;
 		if (checkTime > maxTime) maxTime = checkTime;
@@ -333,8 +335,28 @@ function setMinMaxTime(){
 	}
 }
 
+function checkNull(x){
+	if (x == undefined || x == null || x == NaN || x == "null" || x == "NaN" || x == "nan") return true;
+	return false;
+}
+function setParticleMinMaxTime(){
+	// get min and max time for each particle (in case a particle disappears due to a collision)
+	// this is needed to work with the line lengths using three-fatline
+	partsKeys.forEach(function(p,i) {
+		params.partsMaxTime[p] = -1e10;
+		params.partsMinTime[p] = 1e10;
+
+		parts[p].r.forEach(function(c, j) {
+			if (!checkNull(c[0]) && !checkNull(c[1]) && !checkNull(c[2])){
+				if (parts.time[j] > params.partsMaxTime[p] && parts.time[j] < params.maxTime) params.partsMaxTime[p] = parts.time[j];
+				if (parts.time[j] < params.partsMinTime[p] && parts.time[j] > params.minTime) params.partsMinTime[p] = parts.time[j];
+			}
+		})
+	})
+}
+
 // Fewbody jumps to very large times at the end.  This will fix that
-function setMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
+function setGlobalMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
 
 	var dt = 0.,
 		dtSum = 0.,
@@ -406,7 +428,7 @@ function loadData(callback, canvas){
 		})
 
 		let step1 = new Promise(function(resolve, reject) {
-			setMinMaxTimeTolerance();
+			setGlobalMinMaxTimeTolerance();
 			resolve('done');
 			reject('error');
 		});

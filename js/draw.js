@@ -101,6 +101,7 @@ function updatePoints(){
 	pointsMesh.material.uniforms.alpha.value = params.pointsAlpha;
 }
 
+
 function getLinesParams(p, time, lineLength = params.lineLengthYr){
 	var positions = [];
 
@@ -110,8 +111,11 @@ function getLinesParams(p, time, lineLength = params.lineLengthYr){
 	// }
 
 	parts[p].r.forEach(function(c, j) {
-		if (parts.time[j] <= time && parts.time[j] >= (time - lineLength)){
-			positions.push(c[0], c[1], c[2])
+		// three-fatline complains if there are null values passed
+		if (!checkNull(c[0]) && !checkNull(c[1]) && !checkNull(c[2])){
+			if (parts.time[j] <= time && parts.time[j] >= (time - lineLength)){
+				positions.push(c[0], c[1], c[2])
+			}
 		}
 	});
 
@@ -132,7 +136,7 @@ function initLineMesh(){
 		var positions = getLinesParams(p, params.maxTime, params.maxTime); //  give it the full line to start then cut back the end 
 
 		geo.setPositions(positions);
-		geo.instanceCount = (params.timeYr - params.minTime)/(params.maxTime - params.minTime)*geo._maxInstanceCount;
+		geo.instanceCount = (params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*geo._maxInstanceCount;
 
 		matLine = new THREE.LineMaterial( {
 			color: new THREE.Color("rgb(" + parseInt(params[p+"ColorUse"].r*255) +"," + parseInt(params[p+"ColorUse"].g*255) + "," + parseInt(params[p+"ColorUse"].b*255) + ")"),
@@ -143,29 +147,13 @@ function initLineMesh(){
 		} );
 
 		line = new THREE.Line2( geo, matLine );
-		// line.computeLineDistances();
-		// line.scale.set( 1, 1, 1 );
 
 		linesMesh[p] = line;
 		scene.add(line);
 	});
 
 }
-function _LineGeometry_setPositions(array){
-	// from three-fatline.js
-	// converts [ x1, y1, z1,  x2, y2, z2, ... ] to pairs format
-	var length = array.length - 3;
-	var points = new Float32Array(2 * length);
-	for (var i = 0; i < length; i += 3) {
-		if (array[i]) points[2 * i] = array[i];
-		if (array[i + 1]) points[2 * i + 1] = array[i + 1];
-		if (array[i + 2]) points[2 * i + 2] = array[i + 2];
-		if (array[i + 3]) points[2 * i + 3] = array[i + 3];
-		if (array[i + 4]) points[2 * i + 4] = array[i + 4];
-		if (array[i + 5]) points[2 * i + 5] = array[i + 5];
-	}
-	return points;
-}
+
 function updateLines(){
 	// some resources:
 	//https://discourse.threejs.org/t/the-length-of-positions-of-linesegmentsgeometry-is-fixed-to-24/20375
@@ -174,15 +162,20 @@ function updateLines(){
 	partsKeys.forEach(function(p,i) {
 
 
-		//this will properly change the length of the lines so that they go from t=0 to the point
-		//I still need a way to change the starting point of the line to respect params.lineLength;
-		linesMesh[p].geometry.instanceCount = (params.timeYr - params.minTime)/(params.maxTime - params.minTime)*linesMesh[p].geometry._maxInstanceCount;
-		// linesMesh[p].geometry.index.count = params.lineLength;
+		//this will change the length of the lines so that they go from t=0 to the point
+		linesMesh[p].geometry.instanceCount = (params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*linesMesh[p].geometry._maxInstanceCount;
+		linesMesh[p].material.visible = true;
 
-		// this controls each instance (so not helpful)
-		//linesMesh[p].geometry.setDrawRange(parseInt(params.timeYr - params.minTime - params.lineLength), parseInt(params.timeYr - params.minTime));
-		// linesMesh[p].geometry.needsUpdate = true;
-
+		// I think the only way to have lines that change the starting point is to redefine the positions during each timestep
+		// see bottom of this discussion : https://discourse.threejs.org/t/fat-lines-setting-geometry-data-does-not-work/14448/14
+		if (params.lineLength < params.maxTime - params.minTime){
+			var positions = getLinesParams(p, params.timeYr); 
+			if (positions.length > 0) {
+				linesMesh[p].geometry.setPositions(positions);
+			} else {
+				linesMesh[p].material.visible = false;
+			}
+		} 
 
 		linesMesh[p].material.linewidth = params.lineWidth;
 		linesMesh[p].material.opacity = params.lineAlpha;
