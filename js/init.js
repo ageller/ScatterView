@@ -5,7 +5,8 @@ var keyboard = new KeyboardState();
 
 var parts = null;
 var partsKeys;
-var partsMesh;
+var pointsMesh;
+var linesMesh = {};
 
 var loaded = false;
 
@@ -93,6 +94,7 @@ function init(canvas) {
 
 //draw everything
 	initPointsMesh();
+	initLineMesh();
 	// still need to initialize the line mesh
 }
 
@@ -111,7 +113,7 @@ function defineParams(){
 		this.play = false;
 
 		this.lineAlpha = 1.;
-		this.lineWidth = 0.001;
+		this.lineWidth = 1;
 		this.lineLengthYr = this.maxTime/10.;
 		this.lineLength = this.lineLengthYr;
 		this.pointsSize = 10.;
@@ -206,7 +208,10 @@ function defineParams(){
 			// this is a misnomer, might be wise to update it to something like updateParticlePositions (but redraw is used a lot!)
 	    	params.timeYr = parseFloat(params.timeYr);
 
-			if (params.timeYr > 0) updateParts();
+			if (params.timeYr > 0) {
+				updatePoints();
+				updateLines();
+			}
 	    }
 
 	    this.updateTime = function() {
@@ -279,7 +284,7 @@ function defineParams(){
 		timeGUI.add( params, 'play').listen();
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
-		pointLineGUI.add( params, 'lineWidth', 0, 0.01).onChange( params.redraw );
+		pointLineGUI.add( params, 'lineWidth', 1, 10).onChange( params.redraw );
 		params.lineGUI = pointLineGUI.add( params, 'lineLength', 0, params.maxTime).onChange( params.updateLine );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
 		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
