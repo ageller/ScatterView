@@ -391,13 +391,13 @@ function loadData(callback, canvas){
 		// (all other columns are ignored for now)
 
     	parts = {};
-
+		
 		// reorganize
 		// get the times and particle names and positions
 		times = [];
 		partsKeys = [];
 		partscsv.forEach(function(d,i){
-			if (!times.includes(d.time)) times.push(+d.time);
+			if (!times.includes(+d.time)) times.push(+d.time);
 			if (!partsKeys.includes(d.ID)) {
 				partsKeys.push(d.ID);
 				parts[d.ID] = {};
@@ -440,7 +440,76 @@ function loadData(callback, canvas){
 
 	})
 
+	// var filename = "data/ScatterParts.json";
+    // d3.json(filename,  function(partsjson) {
+	// 	console.log('jsondata', partsjson)
+    // 	//reorganize
+    // 	parts = {};
 
+    // 	times = Object.keys(partsjson);
+    // 	pkeys = Object.keys(partsjson[times[0]]);
+    // 	partsKeys = [];
+
+	// 	pkeys.forEach(function(k,i){
+	// 		if (k.substring(0,8) == "Particle"){
+	// 			partsKeys.push(k)
+	// 			parts[k] = {};
+	// 			Object.keys(partsjson[times[0]][k]).forEach(function(p,j){
+	// 				parts[k][p] = []
+	// 			});
+	// 		} else {
+	// 			parts[k] = [];
+	// 		}
+	// 	});
+	// 	parts.time = [];
+	// 	var foo;
+	// 	times.forEach(function(t,i){
+	// 		parts.time.push(parseFloat(t));
+	// 		if (t != ""){
+	// 			pkeys.forEach(function(k,j){
+	// 				if (partsKeys.includes(k)){
+	// 					Object.keys(parts[k]).forEach(function(p){
+	// 						parts[k][p].push(partsjson[t][k][p]);
+	// 					});
+	// 				} else {
+	// 					parts[k].push(partsjson[t][k])
+	// 				}
+	// 			});
+	// 		}
+	// 	});
+
+	// 	//random colors
+	// 	partsKeys.forEach( function(p,i) {
+	// 		parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
+	// 	})
+
+	// 	console.log('parts from json', parts)
+
+	// 	let step1 = new Promise(function(resolve, reject) {
+	// 		setGlobalMinMaxTimeTolerance();
+	// 		resolve('done');
+	// 		reject('error');
+	// 	});
+	// 	let step2 = new Promise(function(resolve, reject) {
+	// 		defineParams();
+	// 		resolve('done');
+	// 		reject('error');
+	// 	});
+	// 	let step3 = new Promise(function(resolve, reject) {
+	// 		initInterps();
+	// 		resolve('done');
+	// 		reject('error');
+	// 	});			
+		
+	// 	step1.then(function(value){
+	// 		step2.then(function(value){
+	// 			step3.then(function(value){
+	// 				callback(canvas);
+	// 			},function(error){})
+	// 		},function(error){})
+	// 	},function(error){})
+
+	// });
 }
 
 function WebGLStart(canvas){
