@@ -343,14 +343,14 @@ THREE.TrackballControls = function ( object, domElement ) {
 			if (keyboard.pressed("down")) _zoomStart.y -=  0.025 * this.zoomSpeed;
 		}
 		if (keyboard.pressed(_this.keysNames[STATE.PAN])){
-			if (keyboard.pressed("up")) _panStart.y +=  0.025 * this.panSpeed;
-			if (keyboard.pressed("down")) _panStart.y -=  0.025 * this.panSpeed;
-			if (keyboard.pressed("left")) _panStart.x +=  0.025 * this.panSpeed;
-			if (keyboard.pressed("right")) _panStart.x -=  0.025 * this.panSpeed;
+			if (keyboard.pressed("up")) _panStart.y -=  0.025 * this.panSpeed;
+			if (keyboard.pressed("down")) _panStart.y +=  0.025 * this.panSpeed;
+			if (keyboard.pressed("left")) _panStart.x -=  0.025 * this.panSpeed;
+			if (keyboard.pressed("right")) _panStart.x +=  0.025 * this.panSpeed;
 		}
 		if (keyboard.pressed(_this.keysNames[STATE.ROTATE])){
-			if (keyboard.pressed("up")) _moveCurr.y +=  0.025 * this.rotateSpeed;
-			if (keyboard.pressed("down")) _moveCurr.y -=  0.025 * this.rotateSpeed;
+			if (keyboard.pressed("up")) _moveCurr.y -=  0.025 * this.rotateSpeed;
+			if (keyboard.pressed("down")) _moveCurr.y +=  0.025 * this.rotateSpeed;
 			if (keyboard.pressed("left")) _moveCurr.x +=  0.025 * this.rotateSpeed;
 			if (keyboard.pressed("right")) _moveCurr.x -=  0.025 * this.rotateSpeed;
 		}
