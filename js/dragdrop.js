@@ -1,4 +1,6 @@
 // enable drag and drop of files into the browser window
+//https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/File_drag_and_drop
+//https://www.javascripture.com/DataTransferItem
 function attachDragDrop(containerID = 'ContentContainer'){
     d3.select('#' + containerID)
         .on('drop', dropHandler)
