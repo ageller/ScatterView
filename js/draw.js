@@ -133,7 +133,6 @@ function getLinesParams(p, time, lineLength = params.lineLengthYr){
 }
 
 function initLineMesh(){
-	console.log('initialized lines')
 	partsKeys.forEach(function(p,i) {
 
       	//geometry

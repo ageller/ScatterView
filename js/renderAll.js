@@ -1,6 +1,6 @@
 
 function animate(time) {
-	requestAnimationFrame( animate );
+	animateID = requestAnimationFrame( animate );
 	update(time);
 	render();
 }
