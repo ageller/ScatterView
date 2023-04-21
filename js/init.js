@@ -121,6 +121,8 @@ function defineParams(){
 		this.lineLength = this.lineLengthYr;
 		this.pointsSize = 10.;
 		this.pointsAlpha = 1.;
+		this.pointsNow;
+		this.pointsPrev;
 
 		this.renderer = null;
 		this.stereo = false;
@@ -336,7 +338,7 @@ function setGlobalMinMaxTime(){
 }
 
 function checkNull(x){
-	if (x == undefined || x == null || x == NaN || x == "null" || x == "NaN" || x == "nan") return true;
+	if (x == undefined || x == null || x == NaN || !isFinite(x) || x == "null" || x == "NaN" || x == "nan") return true;
 	return false;
 }
 function setParticleMinMaxTime(){
@@ -384,48 +386,33 @@ function setGlobalMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
 }
 
 function loadData(callback, canvas){
-	var filename = "data/ScatterParts.json";
+	d3.csv('data/ScatterParts.csv', function(partscsv){
+		// file must have columns of ID, time, x,y,z 
+		// (all other columns are ignored for now)
 
-    d3.json(filename,  function(partsjson) {
-    	//reorganize
     	parts = {};
 
-    	times = Object.keys(partsjson);
-    	pkeys = Object.keys(partsjson[times[0]]);
-    	partsKeys = [];
-
-		pkeys.forEach(function(k,i){
-			if (k.substring(0,8) == "Particle"){
-				partsKeys.push(k)
-				parts[k] = {};
-				Object.keys(partsjson[times[0]][k]).forEach(function(p,j){
-					parts[k][p] = []
-				});
-			} else {
-				parts[k] = [];
+		// reorganize
+		// get the times and particle names and positions
+		times = [];
+		partsKeys = [];
+		partscsv.forEach(function(d,i){
+			if (!times.includes(d.time)) times.push(+d.time);
+			if (!partsKeys.includes(d.ID)) {
+				partsKeys.push(d.ID);
+				parts[d.ID] = {};
+				parts[d.ID].r = [];
 			}
-		});
-		parts.time = [];
-		var foo;
-		times.forEach(function(t,i){
-			parts.time.push(parseFloat(t));
-			if (t != ""){
-				pkeys.forEach(function(k,j){
-					if (partsKeys.includes(k)){
-						Object.keys(parts[k]).forEach(function(p){
-							parts[k][p].push(partsjson[t][k][p]);
-						});
-					} else {
-						parts[k].push(partsjson[t][k])
-					}
-				});
-			}
-		});
+			parts[d.ID].r.push([d.x, d.y, d.z])
+		})
+		parts.time = times;
 
 		//random colors
 		partsKeys.forEach( function(p,i) {
 			parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
 		})
+
+		console.log('parts from csv', parts)
 
 		let step1 = new Promise(function(resolve, reject) {
 			setGlobalMinMaxTimeTolerance();
@@ -451,7 +438,9 @@ function loadData(callback, canvas){
 			},function(error){})
 		},function(error){})
 
-	});
+	})
+
+
 }
 
 function WebGLStart(canvas){

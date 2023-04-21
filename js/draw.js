@@ -92,23 +92,25 @@ function initPointsMesh(){
 
 function updatePoints(){
 
-	var points = getPointsParams(params.timeYr)
+	if (params.pointsNow) params.pointsPrev = JSON.parse(JSON.stringify(params.pointsNow));
+	params.pointsNow = getPointsParams(params.timeYr)
 
 	// is there a way that we can update the attributes within the for loop above (rather than redefining here)?
-	pointsMesh.geometry.attributes.position = new THREE.BufferAttribute( Float32Array.from(points.positions), 3 );
-	pointsMesh.geometry.attributes.rgbaColor = new THREE.BufferAttribute( Float32Array.from(points.colors), 4 );
-	pointsMesh.geometry.attributes.pointSize = new THREE.BufferAttribute( Float32Array.from(points.size), 1 );
+	pointsMesh.geometry.attributes.position = new THREE.BufferAttribute( Float32Array.from(params.pointsNow.positions), 3 );
+	pointsMesh.geometry.attributes.rgbaColor = new THREE.BufferAttribute( Float32Array.from(params.pointsNow.colors), 4 );
+	pointsMesh.geometry.attributes.pointSize = new THREE.BufferAttribute( Float32Array.from(params.pointsNow.size), 1 );
 	pointsMesh.material.uniforms.alpha.value = params.pointsAlpha;
 }
 
 
 function getLinesParams(p, time, lineLength = params.lineLengthYr){
 	var positions = [];
-
-	// //add one additional vertex interpolated to the exact end of the tail
-	// if (time - lineLength > 0){
-	// 	for (var j=0; j<3; j++) positions.push(parts[p].CoordInterp[j].evaluate(time - lineLength)[0]);
-	// }
+	var cc = [];
+	//add one additional vertex interpolated to the exact end of the tail
+	if (time - lineLength > 0){
+		for (var j=0; j<3; j++) cc[j] = parts[p].CoordInterp[j].evaluate(time - lineLength)[0];
+		if (!checkNull(cc[0]) && !checkNull(cc[1]) && !checkNull(cc[2])) positions.push(cc[0], cc[1], cc[2]);
+	}
 
 	parts[p].r.forEach(function(c, j) {
 		// three-fatline complains if there are null values passed
@@ -119,16 +121,19 @@ function getLinesParams(p, time, lineLength = params.lineLengthYr){
 		}
 	});
 
-	// iTime = parts.iTimeInterp.evaluate(time)[0];
-	// if (parts[p].r.length >= iTime){
-	// //add one additional vertex interpolated to the exact time
-	// 	for (var j=0; j<3; j++) positions.push(parts[p].CoordInterp[j].evaluate(time)[0]);
-	// };
+	cc = [];
+	iTime = parts.iTimeInterp.evaluate(time)[0];
+	if (parts[p].r.length >= iTime){
+	//add one additional vertex interpolated to the exact time
+		for (var j=0; j<3; j++) cc[j] = parts[p].CoordInterp[j].evaluate(time)[0];
+		if (!checkNull(cc[0]) && !checkNull(cc[1]) && !checkNull(cc[2])) positions.push(cc[0], cc[1], cc[2]);
+	};
 
 	return positions;
 }
 
 function initLineMesh(){
+	console.log('initialized lines')
 	partsKeys.forEach(function(p,i) {
 
       	//geometry
@@ -159,23 +164,64 @@ function updateLines(){
 	//https://discourse.threejs.org/t/the-length-of-positions-of-linesegmentsgeometry-is-fixed-to-24/20375
 	//https://discourse.threejs.org/t/out-of-control-memory-when-updating-position-of-lines-within-animate-function/33740
 	//https://jsfiddle.net/prisoner849/h1tzc4jn/
+
 	partsKeys.forEach(function(p,i) {
 
+		// there's a bug when I decrease linelength and then increase
 
-		//this will change the length of the lines so that they go from t=0 to the point
-		linesMesh[p].geometry.instanceCount = (params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*linesMesh[p].geometry._maxInstanceCount;
 		linesMesh[p].material.visible = true;
+
+		// this first part might be faster, but it seems to break when I increase the lineLength back to 100% (like the buffer doesn't have all the data)
+		// let's try with simply replacing all the points, and come back to this if it is too slow.
+		// if (params.lineLength >= params.maxTime - params.minTime){
+		// 	// the line length is the entire span so we don't need to redefine the line positions
+
+		// 	//this will change the length of the lines so that they go from t=0 to the point
+		// 	var count = Math.ceil((params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*linesMesh[p].geometry._maxInstanceCount);
+		// 	linesMesh[p].geometry.instanceCount = count;
+			
+		// 	// connect line to points
+		// 	linesMesh[p].geometry.attributes.instanceEnd.setXYZ(
+		// 		count - 1,
+		// 		params.pointsNow.positions[i*3],
+		// 		params.pointsNow.positions[i*3 + 1],
+		// 		params.pointsNow.positions[i*3 + 2]
+		// 	);
+		// 	linesMesh[p].geometry.attributes.instanceEnd.needsUpdate = true;
+		// 	if (params.pointsPrev){
+		// 		linesMesh[p].geometry.attributes.instanceStart.setXYZ(
+		// 			count,
+		// 			params.pointsPrev.positions[i*3],
+		// 			params.pointsPrev.positions[i*3 + 1],
+		// 			params.pointsPrev.positions[i*3 + 2]
+		// 		);
+		// 		linesMesh[p].geometry.attributes.instanceStart.needsUpdate = true;
+		// 	}
+
+		// } else {
+		// 	// the line length is less than the entire span, and we need to redefine the positions each time step (unfortunately)
+		// 	// this may be slow
+
+		// 	// I think the only way to have lines that change the starting point is to redefine the positions during each timestep
+		// 	// see bottom of this discussion : https://discourse.threejs.org/t/fat-lines-setting-geometry-data-does-not-work/14448/14
+		// 	var positions = getLinesParams(p, params.timeYr); 
+		// 	if (positions.length > 0) {
+		// 		linesMesh[p].geometry.setPositions(positions);
+		// 		linesMesh[p].geometry.instanceCount = linesMesh[p].geometry._maxInstanceCount;
+		// 	} else {
+		// 		linesMesh[p].material.visible = false;
+		// 	}
+		// } 
 
 		// I think the only way to have lines that change the starting point is to redefine the positions during each timestep
 		// see bottom of this discussion : https://discourse.threejs.org/t/fat-lines-setting-geometry-data-does-not-work/14448/14
-		if (params.lineLength < params.maxTime - params.minTime){
-			var positions = getLinesParams(p, params.timeYr); 
-			if (positions.length > 0) {
-				linesMesh[p].geometry.setPositions(positions);
-			} else {
-				linesMesh[p].material.visible = false;
-			}
-		} 
+		var positions = getLinesParams(p, params.timeYr); 
+		if (positions.length > 0) {
+			linesMesh[p].geometry.setPositions(positions);
+			linesMesh[p].geometry.instanceCount = linesMesh[p].geometry._maxInstanceCount;
+		} else {
+			linesMesh[p].material.visible = false;
+		}
 
 		linesMesh[p].material.linewidth = params.lineWidth;
 		linesMesh[p].material.opacity = params.lineAlpha;
