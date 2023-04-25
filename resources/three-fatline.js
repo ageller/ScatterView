@@ -63,6 +63,12 @@
 	    this[setAttributeFn$1]('instanceEnd', new THREE$2.InterleavedBufferAttribute(instanceBuffer, 3, 3)); // xyz
 	    //
 
+		// AMG added to set index of the instance (these are int values, but I don't think webGL allows int attributes?)
+		var indices = [];
+		for (var i=0; i<array.length; i += 6) indices.push(i/6);
+		const indexBuffer = new THREE$2.InstancedInterleavedBuffer(Float32Array.from(indices), 1, 1); 
+	    this[setAttributeFn$1]('instanceIndex', new THREE$2.InterleavedBufferAttribute(indexBuffer, 1, 0)); 
+
 	    this.computeBoundingBox();
 	    this.computeBoundingSphere();
 	    return this;
@@ -180,6 +186,9 @@
 	  linewidth: {
 	    value: 1
 	  },
+	  minInstanceIndex: {
+	    value: 0
+	  },
 	  resolution: {
 	    value: new THREE$1.Vector2(1, 1)
 	  },
@@ -215,6 +224,10 @@
 
 		attribute vec3 instanceColorStart;
 		attribute vec3 instanceColorEnd;
+
+		// added by AMG for the index of the instance
+		attribute float instanceIndex;
+		varying float vInstanceIndex;
 
 		varying vec2 vUv;
 		varying vec4 worldPos;
@@ -258,6 +271,9 @@
 				vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
 
 			#endif
+
+			// added by AMG to pass the instance index to the gragment shader
+			vInstanceIndex = instanceIndex;
 
 			float aspect = resolution.x / resolution.y;
 
@@ -428,6 +444,11 @@
 		varying vec3 worldStart;
 		varying vec3 worldEnd;
 
+		// added by AMG to recieve the instance index from the vertex shader
+		varying float vInstanceIndex;
+		// added by AMG to set the minimum instance index to show
+		uniform float minInstanceIndex; 
+
 		#include <common>
 		#include <color_pars_fragment>
 		#include <fog_pars_fragment>
@@ -550,6 +571,10 @@
 
 			gl_FragColor = vec4( diffuseColor.rgb, alpha );
 
+			// added by AMG to hide the start of the line (can hide the end by setting the instanceCount)
+			// if (vInstanceIndex < minInstanceIndex) gl_FragColor.a = 0.;
+			gl_FragColor.a = (vInstanceIndex - minInstanceIndex)/5.;
+
 			#include <tonemapping_fragment>
 			#include <encodings_fragment>
 			#include <fog_fragment>
@@ -598,6 +623,15 @@
 	        },
 	        set: function (value) {
 	          this.uniforms.linewidth.value = value;
+	        }
+	      },
+		  minInstanceIndex: {
+	        enumerable: true,
+	        get: function () {
+	          return this.uniforms.minInstanceIndex.value;
+	        },
+	        set: function (value) {
+	          this.uniforms.minInstanceIndex.value = value;
 	        }
 	      },
 	      dashed: {

@@ -118,12 +118,12 @@ function defineParams(){
 
 		this.lineAlpha = 1.;
 		this.lineWidth = 1;
-		this.lineLengthYr = (this.maxTime - this.minTime)/this.timeStepUnit
-		this.lineLength = this.lineLengthYr;
+		this.lineLength = parts[partsKeys[0]].r.length;
 		this.pointsSize = 10.;
 		this.pointsAlpha = 1.;
 		this.pointsNow;
 		this.pointsPrev;
+		this.prevCount = {};
 
 		this.renderer = null;
 		this.stereo = false;
@@ -204,7 +204,6 @@ function defineParams(){
 		}
 
 		this.updateLine = function(){
-			params.lineLengthYr = parseFloat(params.timeStepUnit)*parseFloat(params.lineLength);
 			params.redraw();
 		}
 
@@ -290,7 +289,7 @@ function defineParams(){
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
 		pointLineGUI.add( params, 'lineWidth', 1, 10).onChange( params.redraw );
-		params.lineGUI = pointLineGUI.add( params, 'lineLength', 0, params.maxTime - params.minTime).onChange( params.updateLine );
+		params.lineGUI = pointLineGUI.add( params, 'lineLength', 0, parts[partsKeys[0]].r.length).onChange( params.updateLine );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
 		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
@@ -459,7 +458,8 @@ function loadDataFromFile(callback, canvas){
 }
 
 function WebGLStart(canvas){
-
+	console.log('starting WebGL...')
+	
 	init(canvas);
 
 //begin the animation

@@ -145,6 +145,7 @@ function initLineMesh(){
 		matLine = new THREE.LineMaterial( {
 			color: new THREE.Color("rgb(" + parseInt(params[p+"ColorUse"].r*255) +"," + parseInt(params[p+"ColorUse"].g*255) + "," + parseInt(params[p+"ColorUse"].b*255) + ")"),
 			linewidth: params.lineWidth, 
+			minInstanceIndex: 0., 
 			resolution: new THREE.Vector2(window.innerWidth, window.innerHeight), // resolution of the viewport (very important to set! and will need to be updated if screen size changes)
 			opacity: params.lineAlpha,
 			transparent: true,
@@ -154,6 +155,19 @@ function initLineMesh(){
 
 		linesMesh[p] = line;
 		scene.add(line);
+
+		// get the initial instanceStart and InstanceEnd values (is there a better way to do this?)
+		linesMesh[p].instanceStart0 = [];
+		linesMesh[p].instanceStartChanged = [];
+		linesMesh[p].instanceEnd0 = [];
+		linesMesh[p].instanceEndChanged = [];
+		for (var i=0; i<positions.length - 3; i+=3) {
+			linesMesh[p].instanceStart0.push([ positions[i], positions[i + 1], positions[i + 2] ]);
+			linesMesh[p].instanceStartChanged.push(true);
+			linesMesh[p].instanceEnd0.push([   positions[i + 3], positions[i + 4], positions[i + 5] ]);	
+			linesMesh[p].instanceEndChanged.push(true);
+
+		}
 	});
 
 }
@@ -166,62 +180,57 @@ function updateLines(){
 
 	partsKeys.forEach(function(p,i) {
 
-		// there's a bug when I decrease linelength and then increase
 
 		linesMesh[p].material.visible = true;
 
-		// this first part might be faster, but it seems to break when I increase the lineLength back to 100% (like the buffer doesn't have all the data)
-		// let's try with simply replacing all the points, and come back to this if it is too slow.
-		// if (params.lineLength >= params.maxTime - params.minTime){
-		// 	// the line length is the entire span so we don't need to redefine the line positions
+		//this will change the length of the lines so that they go from t=0 to the point
+		var count = Math.ceil((params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*linesMesh[p].geometry._maxInstanceCount);
+		count = Math.max(0, count) + 1;
 
-		// 	//this will change the length of the lines so that they go from t=0 to the point
-		// 	var count = Math.ceil((params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*linesMesh[p].geometry._maxInstanceCount);
-		// 	linesMesh[p].geometry.instanceCount = count;
-			
-		// 	// connect line to points
-		// 	linesMesh[p].geometry.attributes.instanceEnd.setXYZ(
-		// 		count - 1,
-		// 		params.pointsNow.positions[i*3],
-		// 		params.pointsNow.positions[i*3 + 1],
-		// 		params.pointsNow.positions[i*3 + 2]
-		// 	);
-		// 	linesMesh[p].geometry.attributes.instanceEnd.needsUpdate = true;
-		// 	if (params.pointsPrev){
-		// 		linesMesh[p].geometry.attributes.instanceStart.setXYZ(
-		// 			count,
-		// 			params.pointsPrev.positions[i*3],
-		// 			params.pointsPrev.positions[i*3 + 1],
-		// 			params.pointsPrev.positions[i*3 + 2]
-		// 		);
-		// 		linesMesh[p].geometry.attributes.instanceStart.needsUpdate = true;
-		// 	}
+		linesMesh[p].geometry.instanceCount = count;
+		if (count > 0){
+			linesMesh[p].geometry.attributes.instanceEnd.setXYZ(
+				count - 1,
+				params.pointsNow.positions[i*3],
+				params.pointsNow.positions[i*3 + 1],
+				params.pointsNow.positions[i*3 + 2]
+			);
+			linesMesh[p].geometry.attributes.instanceEnd.needsUpdate = true;
+			linesMesh[p].instanceEndChanged[count - 1] = true;
 
-		// } else {
-		// 	// the line length is less than the entire span, and we need to redefine the positions each time step (unfortunately)
-		// 	// this may be slow
-
-		// 	// I think the only way to have lines that change the starting point is to redefine the positions during each timestep
-		// 	// see bottom of this discussion : https://discourse.threejs.org/t/fat-lines-setting-geometry-data-does-not-work/14448/14
-		// 	var positions = getLinesParams(p, params.timeYr); 
-		// 	if (positions.length > 0) {
-		// 		linesMesh[p].geometry.setPositions(positions);
-		// 		linesMesh[p].geometry.instanceCount = linesMesh[p].geometry._maxInstanceCount;
-		// 	} else {
-		// 		linesMesh[p].material.visible = false;
-		// 	}
-		// } 
-
-		// I think the only way to have lines that change the starting point is to redefine the positions during each timestep
-		// see bottom of this discussion : https://discourse.threejs.org/t/fat-lines-setting-geometry-data-does-not-work/14448/14
-		var positions = getLinesParams(p, params.timeYr); 
-		if (positions.length > 0) {
-			linesMesh[p].geometry.setPositions(positions);
-			linesMesh[p].geometry.instanceCount = linesMesh[p].geometry._maxInstanceCount;
-		} else {
-			linesMesh[p].material.visible = false;
 		}
 
+		// if the user moves the time too quickly, then instanceEnd won't reach the actual points.  So we need to reset them
+		// we really only need to do this if the value has changed, but I don't think this will change the speed
+		if (count != params.prevCount[p] ){
+			for (var j = 1; j < count - 1; j += 1){
+				if (linesMesh[p].instanceEndChanged[j] && linesMesh[p].instanceEnd0[j]){
+					linesMesh[p].geometry.attributes.instanceEnd.setXYZ(
+						j, 
+						linesMesh[p].instanceEnd0[j][0], 
+						linesMesh[p].instanceEnd0[j][1], 
+						linesMesh[p].instanceEnd0[j][2]
+					);
+					linesMesh[p].instanceEndChanged[j] = false;
+					linesMesh[p].geometry.attributes.instanceEnd.needsUpdate = true;
+				}
+			}
+		}
+
+		params.prevCount[p] = 0 + count;
+
+		
+		// // I think the only way to have lines that change the starting point is to redefine the positions during each timestep
+		// // see bottom of this discussion : https://discourse.threejs.org/t/fat-lines-setting-geometry-data-does-not-work/14448/14
+		// var positions = getLinesParams(p, params.timeYr); 
+		// if (positions.length > 0) {
+		// 	linesMesh[p].geometry.setPositions(positions);
+		// 	linesMesh[p].geometry.instanceCount = linesMesh[p].geometry._maxInstanceCount;
+		// } else {
+		// 	linesMesh[p].material.visible = false;
+		// }
+
+		linesMesh[p].material.minInstanceIndex = count - params.lineLength;
 		linesMesh[p].material.linewidth = params.lineWidth;
 		linesMesh[p].material.opacity = params.lineAlpha;
 		linesMesh[p].material.color = new THREE.Color("rgb(" + parseInt(params[p+"ColorUse"].r*255) +"," + parseInt(params[p+"ColorUse"].g*255) + "," + parseInt(params[p+"ColorUse"].b*255) + ")");

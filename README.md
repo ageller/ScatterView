@@ -2,7 +2,7 @@
 
 ![banner](banner.png)
 
-A WebGL tool to display output from scattering simulations
+A WebGL tool to display output from scattering simulations.  This tool contains a GUI with many options that you can use to customize the view of your model.  The keyboard and/or mouse can be used to change the camera location and time.  The GUI also enables the user to capture screen grabs and movies.  
 
 A live version is available [here](https://ageller.github.io/Scatter_WebGL/).
 

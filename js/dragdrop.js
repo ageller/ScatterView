@@ -19,6 +19,7 @@ function dropHandler(){
             console.log(`file[${i}].name = ${file.name}`, item);
             var reader = new FileReader();
             reader.onload = function(event) {
+                console.log('parsing data...')
                 var partscsv = d3.csvParse(event.target.result);
                 restartViewer(partscsv)
             };
@@ -39,6 +40,7 @@ function dragOverHandler(){
 }
 
 function restartViewer(partscsv){
+    console.log('restarting viewer...')
 
     cancelAnimationFrame(animateID);
     d3.select('#ContentContainer').html('');
@@ -54,5 +56,6 @@ function restartViewer(partscsv){
 	minTime = 1e10;
 	gui = new dat.GUI({width:300});
 
+    console.log('starting promisses...');
     startPromisses(WebGLStart, window, partscsv)
 }
