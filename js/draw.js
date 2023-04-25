@@ -93,7 +93,7 @@ function initPointsMesh(){
 function updatePoints(){
 
 	if (params.pointsNow) params.pointsPrev = JSON.parse(JSON.stringify(params.pointsNow));
-	params.pointsNow = getPointsParams(params.timeYr)
+	params.pointsNow = getPointsParams(params.timeYr);
 
 	// is there a way that we can update the attributes within the for loop above (rather than redefining here)?
 	pointsMesh.geometry.attributes.position = new THREE.BufferAttribute( Float32Array.from(params.pointsNow.positions), 3 );
@@ -178,32 +178,57 @@ function updateLines(){
 	//https://discourse.threejs.org/t/out-of-control-memory-when-updating-position-of-lines-within-animate-function/33740
 	//https://jsfiddle.net/prisoner849/h1tzc4jn/
 
+
+	// get the point at the right time at the end of the line (for use later)
+	var pointsEnd = null;
+	if (params.timeYr - params.lineLengthYr > 0) pointsEnd = getPointsParams(params.timeYr - params.lineLengthYr);
+
 	partsKeys.forEach(function(p,i) {
 
 
 		linesMesh[p].material.visible = true;
 
-		//this will change the length of the lines so that they go from t=0 to the point
-		var count = Math.ceil((params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*linesMesh[p].geometry._maxInstanceCount);
-		count = Math.max(0, count) + 1;
+		//this will change the length of the instance near the point so that the line goes from the closest time to the point
+		// this doesn't seem to work perfectly for Dany's dataset.  It seems to get a count that is too small.  Rounding error?
+		// var count = Math.ceil((params.timeYr - params.partsMinTime[p])/(params.partsMaxTime[p] - params.partsMinTime[p])*linesMesh[p].geometry._maxInstanceCount);
+		var count = Math.floor(parts.iTimeInterp.evaluate(params.timeYr)[0]) - 1;
+		count = Math.max(0, count);
 
-		linesMesh[p].geometry.instanceCount = count;
+		linesMesh[p].geometry.instanceCount = count + 1;
 		if (count > 0){
 			linesMesh[p].geometry.attributes.instanceEnd.setXYZ(
-				count - 1,
+				count,
 				params.pointsNow.positions[i*3],
 				params.pointsNow.positions[i*3 + 1],
 				params.pointsNow.positions[i*3 + 2]
 			);
 			linesMesh[p].geometry.attributes.instanceEnd.needsUpdate = true;
-			linesMesh[p].instanceEndChanged[count - 1] = true;
+			linesMesh[p].instanceEndChanged[count] = true;
 
 		}
 
+		// this will change the length of the instance nearest the end of the line (defined my the lineLength) so that it smoothly transitions
+		var count2 = Math.floor(parts.iTimeInterp.evaluate(params.timeYr - params.lineLengthYr)[0]) - 1;
+		if (count2 > 0 && pointsEnd){
+			// console.log('here', count, count2, pointsEnd.positions, params.pointsNow.positions)
+
+			// set the start of the instance of the line that position
+			linesMesh[p].geometry.attributes.instanceStart.setXYZ(
+				count2,
+				pointsEnd.positions[i*3],
+				pointsEnd.positions[i*3 + 1],
+				pointsEnd.positions[i*3 + 2]
+			);
+			linesMesh[p].geometry.attributes.instanceStart.needsUpdate = true;
+			linesMesh[p].instanceStartChanged[count2] = true;
+			linesMesh[p].material.minInstanceIndex = count2;
+		}
+
+		
 		// if the user moves the time too quickly, then instanceEnd won't reach the actual points.  So we need to reset them
 		// we really only need to do this if the value has changed, but I don't think this will change the speed
 		if (count != params.prevCount[p] ){
-			for (var j = 1; j < count - 1; j += 1){
+			for (var j = 1; j < count; j += 1){
 				if (linesMesh[p].instanceEndChanged[j] && linesMesh[p].instanceEnd0[j]){
 					linesMesh[p].geometry.attributes.instanceEnd.setXYZ(
 						j, 
@@ -214,6 +239,19 @@ function updateLines(){
 					linesMesh[p].instanceEndChanged[j] = false;
 					linesMesh[p].geometry.attributes.instanceEnd.needsUpdate = true;
 				}
+
+				if (linesMesh[p].instanceStartChanged[j] && linesMesh[p].instanceStart0[j] && j > count2){
+					linesMesh[p].geometry.attributes.instanceStart.setXYZ(
+						j, 
+						linesMesh[p].instanceStart0[j][0], 
+						linesMesh[p].instanceStart0[j][1], 
+						linesMesh[p].instanceStart0[j][2]
+					);
+					linesMesh[p].instanceStartChanged[j] = false;
+					linesMesh[p].geometry.attributes.instanceStart.needsUpdate = true;
+				}
+
+
 			}
 		}
 
@@ -230,7 +268,6 @@ function updateLines(){
 		// 	linesMesh[p].material.visible = false;
 		// }
 
-		linesMesh[p].material.minInstanceIndex = count - params.lineLength;
 		linesMesh[p].material.linewidth = params.lineWidth;
 		linesMesh[p].material.opacity = params.lineAlpha;
 		linesMesh[p].material.color = new THREE.Color("rgb(" + parseInt(params[p+"ColorUse"].r*255) +"," + parseInt(params[p+"ColorUse"].g*255) + "," + parseInt(params[p+"ColorUse"].b*255) + ")");

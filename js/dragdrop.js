@@ -56,6 +56,6 @@ function restartViewer(partscsv){
 	minTime = 1e10;
 	gui = new dat.GUI({width:300});
 
-    console.log('starting promisses...');
+    console.log('starting promises...');
     startPromisses(WebGLStart, window, partscsv)
 }

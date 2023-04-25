@@ -571,9 +571,8 @@
 
 			gl_FragColor = vec4( diffuseColor.rgb, alpha );
 
-			// added by AMG to hide the start of the line (can hide the end by setting the instanceCount)
-			// if (vInstanceIndex < minInstanceIndex) gl_FragColor.a = 0.;
-			gl_FragColor.a = (vInstanceIndex - minInstanceIndex)/5.;
+			// added by AMG to hide the start of the instanced line (can hide the end by setting the instanceCount)
+			if (vInstanceIndex < minInstanceIndex) gl_FragColor.a = 0.;
 
 			#include <tonemapping_fragment>
 			#include <encodings_fragment>

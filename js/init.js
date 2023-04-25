@@ -118,7 +118,7 @@ function defineParams(){
 
 		this.lineAlpha = 1.;
 		this.lineWidth = 1;
-		this.lineLength = parts[partsKeys[0]].r.length;
+		this.lineLengthYr = (this.maxTime - this.minTime)/this.timeStepUnit
 		this.pointsSize = 10.;
 		this.pointsAlpha = 1.;
 		this.pointsNow;
@@ -289,7 +289,7 @@ function defineParams(){
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
 		pointLineGUI.add( params, 'lineWidth', 1, 10).onChange( params.redraw );
-		params.lineGUI = pointLineGUI.add( params, 'lineLength', 0, parts[partsKeys[0]].r.length).onChange( params.updateLine );
+		params.lineGUI = pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime - params.minTime).onChange( params.updateLine );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
 		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
