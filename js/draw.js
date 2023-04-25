@@ -258,8 +258,7 @@ function updateLines(){
 		params.prevCount[p] = 0 + count;
 
 		
-		// // I think the only way to have lines that change the starting point is to redefine the positions during each timestep
-		// // see bottom of this discussion : https://discourse.threejs.org/t/fat-lines-setting-geometry-data-does-not-work/14448/14
+		// redefine the positions during each timestep (slow for large data)
 		// var positions = getLinesParams(p, params.timeYr); 
 		// if (positions.length > 0) {
 		// 	linesMesh[p].geometry.setPositions(positions);
