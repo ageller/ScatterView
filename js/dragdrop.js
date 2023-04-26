@@ -57,5 +57,5 @@ function restartViewer(partscsv){
 	gui = new dat.GUI({width:300});
 
     console.log('starting promises...');
-    startPromisses(WebGLStart, window, partscsv)
+    startPromises(WebGLStart, window, partscsv)
 }

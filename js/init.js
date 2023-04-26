@@ -19,8 +19,8 @@ var params;
 var gui = new dat.GUI({width:300});
 
 var fov = 45;
-var zmin = 1.;
-var zmax = 5.e10;
+var zmin = 1e-5;
+var zmax = 5.e5;
 
 var animateID = null;
 
@@ -411,23 +411,27 @@ function processData(inputData){
 	// console.log('parts from csv', parts)
 }
 
-function startPromisses(callback, canvas, inputData){
+function startPromises(callback, canvas, inputData){
 	let step0 = new Promise(function(resolve, reject) {
+		console.log('processing data ...')
 		processData(inputData)
 		resolve('done');
 		reject('error');
 	});
 	let step1 = new Promise(function(resolve, reject) {
+		console.log('setting min max time ... ')
 		setGlobalMinMaxTimeTolerance();
 		resolve('done');
 		reject('error');
 	});
 	let step2 = new Promise(function(resolve, reject) {
+		console.log('defining params ...')
 		defineParams();
 		resolve('done');
 		reject('error');
 	});
 	let step3 = new Promise(function(resolve, reject) {
+		console.log('initializing interps ... ')
 		initInterps();
 		resolve('done');
 		reject('error');
@@ -452,7 +456,7 @@ function loadDataFromFile(callback, canvas){
 	d3.csv('data/ScatterParts.csv', function(partscsv){
 		// file must have columns of ID, time, x,y,z 
 		// (all other columns are ignored for now)
-		startPromisses(callback, canvas, partscsv);
+		startPromises(callback, canvas, partscsv);
 	})
 
 }
