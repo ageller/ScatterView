@@ -285,20 +285,20 @@ function defineParams(){
 		gui.remember(params);
 
 		var timeGUI = gui.addFolder('Time controls');
-		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).listen().onChange(params.redraw);
-		timeGUI.add( params, 'timeStepUnit', {"Hour": 1./8760., "Day": 1./365.24, "Year": 1, "Million Years": 1e6, } ).onChange(params.updateTimeStep);
-		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).listen().onChange(params.updateTimeStep);
-		timeGUI.add( params, 'play').listen();
+		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).name("Time").listen().onChange(params.redraw);
+		timeGUI.add( params, 'timeStepUnit', {"Hour": 1./8760., "Day": 1./365.24, "Year": 1, "Million Years": 1e6, } ).name("Time Step Unit").onChange(params.updateTimeStep);
+		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).name("Time Step Factor").listen().onChange(params.updateTimeStep);
+		timeGUI.add( params, 'play').name("Play").listen();
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
-		pointLineGUI.add( params, 'lineWidth', 1, 10).onChange( params.redraw );
-		params.lineGUI = pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime - params.minTime).onChange( params.updateLine );
-		pointLineGUI.add( params, 'lineAlpha', 0, 1.).onChange( params.redraw );
+		pointLineGUI.add( params, 'lineWidth', 1, 10).name("Line Width").onChange( params.redraw );
+		params.lineGUI = pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime - params.minTime).name("Line Length").onChange( params.updateLine );
+		pointLineGUI.add( params, 'lineAlpha', 0, 1.).name("Line Opacity").onChange( params.redraw );
 		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
-		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).onChange( params.redraw );
+		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).name("Points Opacity").onChange( params.redraw );
 		partsKeys.forEach( function(p,i) {
 			params[p+"PointSize"] = params.pointsSize;
-			pointLineGUI.add( params, p+"PointSize", 0, 100).onChange(params.redraw);
+			pointLineGUI.add( params, p+"PointSize", 0, 100).name(p + " Point Size").onChange(params.redraw);
 		});
 
 		var colorGUI = gui.addFolder('Colors');
@@ -306,28 +306,28 @@ function defineParams(){
 			params[p+"ColorUse"] = parts[p].color;
 			params[p+"Color"] = [255.*parts[p].color.r, 255.*parts[p].color.g, 255.*parts[p].color.b];
 
-			colorGUI.addColor( params, p+"Color").onChange(function(){params.updateColor(p)});
+			colorGUI.addColor( params, p+"Color").name(p + " Color").onChange(function(){params.updateColor(p)});
 
 		});
 
 		var captureGUI = gui.addFolder('Capture');
-		captureGUI.add( params, 'filename');
-		captureGUI.add( params, 'captureWidth');
-		captureGUI.add( params, 'captureHeight');
-		captureGUI.add( params, 'videoDuration');
-		captureGUI.add( params, 'videoFramerate');
-		captureGUI.add( params, 'videoFormat', {"gif":"gif", "jpg":"jpg", "png":"png"} )
-		captureGUI.add( params, 'screenshot');
-		captureGUI.add( params, 'recordVideo');
+		captureGUI.add( params, 'filename').name("File Name");
+		captureGUI.add( params, 'captureWidth').name("Capture Width");
+		captureGUI.add( params, 'captureHeight').name("Capture Height");
+		captureGUI.add( params, 'videoDuration').name("Video Duration");
+		captureGUI.add( params, 'videoFramerate').name("Video Framerate");
+		captureGUI.add( params, 'videoFormat', {"gif":"gif", "jpg":"jpg", "png":"png"} ).name("Video Format")
+		captureGUI.add( params, 'screenshot').name("Take Screenshot");
+		captureGUI.add( params, 'recordVideo').name("Start Recording Video");
 
 		var cameraGUI = gui.addFolder('Camera');
-		cameraGUI.add( params, 'fullscreen');
-		cameraGUI.add( params, 'stereo').onChange(params.updateStereo);
-		cameraGUI.add( params, 'stereoSep',0,1).onChange(params.updateStereo);
-		cameraGUI.add( params, 'friction',0,1).onChange(params.updateFriction);
-		cameraGUI.add( params, 'zoomSpeed',0.01,3).onChange(params.updateZoom);
-		cameraGUI.add( params, 'rotateSpeed',0.01,3).onChange(params.updateRotate);
-		cameraGUI.add( params, 'panSpeed',0.01,3).onChange(params.updatePan);
+		cameraGUI.add( params, 'fullscreen').name("Fullscreen");
+		cameraGUI.add( params, 'stereo').name("Stereo").onChange(params.updateStereo);
+		cameraGUI.add( params, 'stereoSep',0,1).name("Stereo Separation").onChange(params.updateStereo);
+		cameraGUI.add( params, 'friction',0,1).name("Friction").onChange(params.updateFriction);
+		cameraGUI.add( params, 'zoomSpeed',0.01,3).name("Soom Speed").onChange(params.updateZoom);
+		cameraGUI.add( params, 'rotateSpeed',0.01,3).name("Rotation Speed").onChange(params.updateRotate);
+		cameraGUI.add( params, 'panSpeed',0.01,3).name("Pan Speed").onChange(params.updatePan);
 	}
 }
 
@@ -503,12 +503,6 @@ function WebGLStart(canvas){
 
 //begin the animation
 	animate();
-}
-
-function WebGLRestart(canvas){
-
-
-
 }
 
 //////this will load the data, and then start the WebGL rendering
