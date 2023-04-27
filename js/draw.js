@@ -27,6 +27,7 @@ function initInterps(){
         1,
         new Float32Array( 1 )
     );
+
 }
 
 function getPointsParams(time){

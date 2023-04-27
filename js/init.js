@@ -1,30 +1,25 @@
 //all global variables
 
-var container, scene, camera, renderer, controls, effect, composer, capturer;
-var keyboard = new KeyboardState();
+var container, scene, camera, renderer, controls, effect, composer, capturer, keyboard, parts, partsKeys, pointsMesh, params, gui, animateID, linesMesh;
 
-var parts = null;
-var partsKeys;
-var pointsMesh;
-var linesMesh = {};
-
+var dataProcessed = false;
 
 var maxTime = 0;
 var minTime = 1e10;
-
-//defined in WebGLStart, after data is loaded
-var ParamsInit;
-var params;
-
-var gui = new dat.GUI({width:300});
 
 var fov = 45;
 var zmin = 1e-5;
 var zmax = 5.e5;
 
-var animateID = null;
 
 function init(canvas) {
+
+    // initialize global variables
+    container = scene = camera = renderer = controls = effect = composer = capturer = pointsMesh = animateID = null;
+    linesMesh = {};
+
+    d3.select('#ContentContainer').html('');
+
 	// scene
 	scene = new THREE.Scene();
 
@@ -35,13 +30,19 @@ function init(canvas) {
 	camera = new THREE.PerspectiveCamera( fov, aspect, zmin, zmax);
 	scene.add(camera);
 
-	camera.position.set(0,0,-75);
+    // get an estimate of the best initial distance for the camera
+    var points0 = getPointsParams(minTime);
+    var maxD = 0;
+    for (var i=0; i<points0.positions.length; i+=3){
+        var dist = Math.sqrt(
+            Math.pow(points0.positions[i],2) + 
+            Math.pow(points0.positions[i + 1],2) + 
+            Math.pow(points0.positions[i + 2],2))
+        maxD = Math.max(dist, maxD);
+    }
+	camera.position.set(0,0,-5*maxD);
 
 	camera.lookAt(scene.position);	
-
-	var dist = scene.position.distanceTo(camera.position);
-	var vFOV = THREE.MathUtils.degToRad( camera.fov ); // convert vertical fov to radians
-
 
 	// renderer
 	if ( Detector.webgl ) { //for WebGL
@@ -75,6 +76,8 @@ function init(canvas) {
 		effect.autoClear = false;
 		params.renderer = renderer;
 
+        keyboard = new KeyboardState();
+
 		//for video capture
 		// composer = new THREE.EffectComposer(params.renderer);
 
@@ -102,7 +105,7 @@ function init(canvas) {
 
 function defineParams(){
 
-    ParamsInit = function() {
+    var ParamsInit = function() {
 
 
 		this.timeYr = minTime;
@@ -277,7 +280,7 @@ function defineParams(){
 
     params = new ParamsInit();
 	setParticleMinMaxTime();
-
+    gui = new dat.GUI({width:300});
 	if ( Detector.webgl ) {
 		gui.remember(params);
 
@@ -385,85 +388,117 @@ function setGlobalMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
 
 }
 
+
 function processData(inputData){
+    console.log('processing data ...')
+    dataProcessed = false;
 	parts = {};
 		
-	// reorganize
+    // for the loader
+	var dataSize = inputData.length - 1;
+
+    // reorganize
 	// get the times and particle names and positions
 	times = [];
 	partsKeys = [];
-	inputData.forEach(function(d,i){
-		if (!times.includes(+d.time)) times.push(+d.time);
-		if (!partsKeys.includes(d.ID)) {
-			partsKeys.push(d.ID);
-			parts[d.ID] = {};
-			parts[d.ID].r = [];
-		}
-		parts[d.ID].r.push([d.x, d.y, d.z])
-	})
-	parts.time = times;
 
-	//random colors
-	partsKeys.forEach( function(p,i) {
-		parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
-	})
+    // try loading data in chunks so that we can get a progress bar to update!
+    var linesPerChunk = 500.; // some guess to what will make the loading bar look smooth
+    var chunks = Math.ceil(inputData.length/linesPerChunk);
 
-	// console.log('parts from csv', parts)
+    for (var j = 0; j < chunks; j += 1){
+        (function(j){
+            setTimeout(function(){
+                for (var k = 0; k < linesPerChunk; k += 1){
+                    var i = j*linesPerChunk + k;
+                    var d = inputData[i];
+                    if (d){
+                        if (!times.includes(+d.time)) times.push(+d.time);
+                        if (!partsKeys.includes(d.ID)) {
+                            partsKeys.push(d.ID);
+                            parts[d.ID] = {};
+                            parts[d.ID].r = [];
+                        }
+                        parts[d.ID].r.push([d.x, d.y, d.z]);
+                    }
+
+                    // update the loader
+                    if (k == linesPerChunk - 1)  d3.select('#loaderFill').style('width', i/dataSize*100 + '%');
+
+                    // finish data processing when at the end
+                    if (i == dataSize) {
+                        parts.time = times;
+                        //random colors
+                        partsKeys.forEach( function(p,i) {
+                            parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
+                        })
+                        dataProcessed = true;
+                    }
+                }
+            }, 100)
+        }(j))
+    }
+
 }
 
-function startPromises(callback, canvas, inputData){
-	let step0 = new Promise(function(resolve, reject) {
-		console.log('processing data ...')
-		processData(inputData)
-		resolve('done');
-		reject('error');
-	});
-	let step1 = new Promise(function(resolve, reject) {
-		console.log('setting min max time ... ')
-		setGlobalMinMaxTimeTolerance();
-		resolve('done');
-		reject('error');
-	});
-	let step2 = new Promise(function(resolve, reject) {
-		console.log('defining params ...')
-		defineParams();
-		resolve('done');
-		reject('error');
-	});
-	let step3 = new Promise(function(resolve, reject) {
-		console.log('initializing interps ... ')
-		initInterps();
-		resolve('done');
-		reject('error');
-	});			
+function startPromises(callback, canvas){
+    let step1 = new Promise(function(resolve, reject) {
+        console.log('setting min max time ... ')
+        setGlobalMinMaxTimeTolerance();
+        resolve('done');
+        reject('error');
+    });
+    let step2 = new Promise(function(resolve, reject) {
+        console.log('defining params ...')
+        defineParams();
+        resolve('done');
+        reject('error');
+    });
+    let step3 = new Promise(function(resolve, reject) {
+        console.log('initializing interps ... ')
+        initInterps();
+        resolve('done');
+        reject('error');
+    });	
+
+    step1.then(function(value){
+        step2.then(function(value){
+            step3.then(function(value){
+                callback(canvas);
+            },function(error){})
+        },function(error){})
+    },function(error){})
+}
+
+function loadSystem(callback, canvas, inputData){
 	
-	step0.then(function(value){
-		step1.then(function(value){
-			step2.then(function(value){
-				step3.then(function(value){
-				callback(canvas);
-				},function(error){})
-			},function(error){})
-		},function(error){})
-	},function(error){})
-}
+    // processing data outside of promise so that I can have a loading progress bar!
+    processData(inputData);
+    var wait = setInterval(function(){
+        if (dataProcessed){
+            clearInterval(wait);
+            startPromises(callback, canvas)
+        }
+    })
 
+
+}
 
 function loadDataFromFile(callback, canvas){
-
-	attachDragDrop();
 
 	d3.csv('data/ScatterParts.csv', function(partscsv){
 		// file must have columns of ID, time, x,y,z 
 		// (all other columns are ignored for now)
-		startPromises(callback, canvas, partscsv);
+        loadSystem(callback, canvas, partscsv);
 	})
 
 }
 
 function WebGLStart(canvas){
 	console.log('starting WebGL...')
-	
+
+	d3.select('#loader').style('display','none')
+
 	init(canvas);
 
 //begin the animation

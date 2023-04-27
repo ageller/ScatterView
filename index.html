@@ -32,17 +32,21 @@
 
 	<body>
 
-		<div id="ContentContainer" style="position: absolute; left:0px; top:0px"></div>
+		<div id="ContentContainer"></div>
+		<div id="loader">
+            <p>Loading...</p>
+            <div id="loaderFill" style="width:0%"></div>
+        </div>
 
 		<!-- shaders -->
 		<script src="shaders/vertex.glsl.js"></script>
 		<script src="shaders/fragment.glsl.js"></script>
 
 		<!-- the main attraction -->
-		<script src="js/dragdrop.js"></script>
 		<script src="js/init.js"></script>
 		<script src="js/renderAll.js"></script>
 		<script src="js/draw.js"></script>
+		<script src="js/dragdrop.js"></script>
 
 
 	</body>

@@ -1,7 +1,7 @@
 
 function animate(time) {
 	animateID = requestAnimationFrame( animate );
-	update(time);
+    update(time);
 	render();
 }
 

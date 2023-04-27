@@ -5,9 +5,13 @@ function attachDragDrop(containerID = 'ContentContainer'){
     d3.select('#' + containerID)
         .on('drop', dropHandler)
         .on('dragover', dragOverHandler)
+        .on('dragenter', dragEnterHandler)
+        .on('dragleave', dragLeaveHandler)
 }
 
 function dropHandler(){
+    d3.select('#ContentContainer').style('opacity',1)
+
     d3.event.preventDefault();
     if (d3.event.dataTransfer.items) {
         console.log('have dropped items');
@@ -19,8 +23,8 @@ function dropHandler(){
             console.log(`file[${i}].name = ${file.name}`, item);
             var reader = new FileReader();
             reader.onload = function(event) {
-                console.log('parsing data...')
-                var partscsv = d3.csvParse(event.target.result);
+            console.log('parsing data...')
+            var partscsv = d3.csvParse(event.target.result);
                 restartViewer(partscsv)
             };
             reader.readAsText(item.getAsFile())
@@ -39,23 +43,35 @@ function dragOverHandler(){
     d3.event.preventDefault();
 }
 
+function dragEnterHandler(){
+    d3.select('#ContentContainer').transition().duration(100).style('opacity',0.7)
+}
+function dragLeaveHandler(){
+    d3.select('#ContentContainer').transition().duration(100).style('opacity',1)
+}
+
 function restartViewer(partscsv){
     console.log('restarting viewer...')
 
-    cancelAnimationFrame(animateID);
-    d3.select('#ContentContainer').html('');
-    gui.destroy();
+    d3.select('#loader').style('display','block')
+    d3.select('#loaderFill').style('width', '0%');
 
-	// I need a way to (re)initialize all the global variables if a file is dropped into the browser
-	// ideally I'd like to simply include all globals in the params object, but the code is already written to have both, 
-	// so... I will simply make a way to re-initialize them here
-	container = scene = camera = renderer = controls = effect = composer = capturer = parts = partsKeys = pointsMesh = paramsInit = params = animateID = null;
-	keyboard = new KeyboardState();
-	linesMesh = {};
-	maxTime = 0;
-	minTime = 1e10;
-	gui = new dat.GUI({width:300});
+    // destroy the GUI
+    // remove all objects from the scene
+    // stop the animation
+    cancelAnimationFrame(animateID);
+    gui.destroy();
+    d3.select('#contentContainer').html("")
+
+    // reinitialize some global variables (other initialized in init function)
+    params = parts = partsKeys = null;
+    dataProcessed = false;
+    maxTime = 0;
+    minTime = 1e10;
 
     console.log('starting promises...');
-    startPromises(WebGLStart, window, partscsv)
+    loadSystem(WebGLStart, window, partscsv)
+    
 }
+
+attachDragDrop();

@@ -243,6 +243,25 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 		//added by AMG to allow the keyboard to move around freely
 		if (keyboard.pressed(_this.keysNames[STATE.ZOOM])) _this.target.sub( eye0.sub(_eye) );
+		// if (keyboard.pressed(_this.keysNames[STATE.ZOOM])) {
+			// try to move the target to be just in front of the camera
+			// https://stackoverflow.com/questions/17218054/how-to-put-an-object-in-front-of-camera-in-three-js
+		// 	    // fixed distance from camera to the object
+		// 		var diff = eye0.sub(_eye);
+		// 		var dist = 0;
+		// 		var cwd = new THREE.Vector3();
+				
+		// 		_this.object.getWorldDirection(cwd);
+				
+		// 		// cwd.multiplyScalar(dist);
+		// 		// cwd.add(_this.object.position);
+		// 		cwd.add(diff);
+				
+		// 		_this.target = cwd.clone();
+		// 		console.log(_this.object.position, cwd, _eye, _this.target, diff)
+		// 	// _this.object.add(_this.target);
+		// 	// _this.target.position.set(0,0,-10);
+		// } 
 
 	};
 
