@@ -96,10 +96,9 @@ function init(canvas) {
 
 	camera.up.set(0, -1, 0);
 
-//draw everything
+    //draw/initialize everything
 	initPointsMesh();
 	initLineMesh();
-	// still need to initialize the line mesh
 }
 
 
@@ -179,31 +178,43 @@ function defineParams(){
 
 		this.recordVideo = function(){
 
-            // I want to create another progress bar
-            // I solved this in Firefly (with much code!)
-            // Firefly has a circle, but here I think I'd prefer a simple bar at the bottom (like our loading bar)
-            // maybe I should rename the loading bar to a progress bar and just use it here as well
-            // then I could have the text change in JS (Loading... vs. Recording...)
-            // see Firefly renderLoop.js and applyUISelections.js for recordingCircle
+            if (params.captureCanvas){
+                // stop the recording
+                params.videoFrame = params.videoDuration*params.videoFramerate
 
-            //initialize the progress bar
-            d3.select('#progressFill').style('width', '0%');
-            d3.select('#progress').select('p').text('Capturing ...');
-            d3.select('#progress').style('display', 'block');
+            } else {
+                // start the recording
 
-			params.captureCanvas = true;
-            params.videoFrame = 0;
-			capturer = new CCapture( { 
-				format: params.videoFormat, 
-				workersPath: 'resources/CCapture/',
-				verbose: true,
-				// framerate: params.videoFramerate,
-				// name: params.filename,
-				// timeLimit: params.videoDuration,
-				// autoSaveTime: params.videoDuration,
-			} );
+                // change the name of the GUI
+                d3.select(gui.__folders.Capture.__ul.childNodes[8]).select('.property-name').text('Stop Video Recording');      
 
-			capturer.start();
+
+                // I want to create another progress bar
+                // I solved this in Firefly (with much code!)
+                // Firefly has a circle, but here I think I'd prefer a simple bar at the bottom (like our loading bar)
+                // maybe I should rename the loading bar to a progress bar and just use it here as well
+                // then I could have the text change in JS (Loading... vs. Recording...)
+                // see Firefly renderLoop.js and applyUISelections.js for recordingCircle
+
+                //initialize the progress bar
+                d3.select('#progressFill').style('width', '0%');
+                d3.select('#progress').select('p').text('Capturing ...');
+                d3.select('#progress').style('display', 'block');
+
+                params.captureCanvas = true;
+                params.videoFrame = 0;
+                capturer = new CCapture( { 
+                    format: params.videoFormat, 
+                    workersPath: 'resources/CCapture/',
+                    verbose: false,
+                    // framerate: params.videoFramerate,
+                    // name: params.filename,
+                    // timeLimit: params.videoDuration,
+                    // autoSaveTime: params.videoDuration,
+                } );
+
+                capturer.start();
+            }
 
 		}
 

@@ -56,35 +56,41 @@ function render() {
 
         // take care of the progress bar
         params.videoFrame += 1;
-        console.log('check', params.videoFrame/(params.videoDuration*params.videoFramerate)*100)
         d3.select('#progressFill').style('width', params.videoFrame/(params.videoDuration*params.videoFramerate)*100 + '%');
 
-        if (params.videoFrame >= params.videoDuration*params.videoFramerate){
+        if (params.videoFrame >= params.videoDuration*params.videoFramerate) endRecording();
 
-            // update the text in the progress bar
-            d3.select('#progress').select('p').text('Rendering ...');
-            d3.select('#progressFill').style('width', '100%');
-
-            // save the video
-            capturer.stop();
-            var fmt = params.videoFormat;
-            var ext = '.' + fmt;
-            if (fmt != 'gif') ext = '.tar';
-            capturer.save(function(blob){ 
-                // this callback executes after the rendering is complete
-                download(blob, params.filename + ext, fmt);
-
-                //hide the progress indicator
-                d3.select('#progress').style('display','none');
-            });
-
-            // reset
-            params.captureCanvas = false;
-            params.videoFrame = 0;
-        }
 
 	}
 
     params.renderer.render( scene, camera );
 
+}
+
+
+function endRecording(){
+    
+    // update the text in the progress bar
+    d3.select('#progress').select('p').text('Rendering ...');
+    d3.select('#progressFill').style('width', '100%');
+
+    // save the video
+    capturer.stop();
+    var fmt = params.videoFormat;
+    var ext = '.' + fmt;
+    if (fmt != 'gif') ext = '.tar';
+    capturer.save(function(blob){ 
+        // this callback executes after the rendering is complete
+        download(blob, params.filename + ext, fmt);
+
+        //hide the progress indicator
+        d3.select('#progress').style('display','none');
+    });
+
+    // reset
+    params.captureCanvas = false;
+    params.videoFrame = 0;
+    d3.select(gui.__folders.Capture.__ul.childNodes[8]).select('.property-name').text('Start Video Recording');      
+
+        
 }
