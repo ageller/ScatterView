@@ -1,7 +1,10 @@
 //all global variables
+var container, scene, camera, renderer, controls, effect, composer, capturer, keyboard, parts, partsKeys, pointsMesh, params, gui, animateID, linesMesh, progressUpdater, rs, IDs, times;
 
-var container, scene, camera, renderer, controls, effect, composer, capturer, keyboard, parts, partsKeys, pointsMesh, params, gui, animateID, linesMesh;
+var renderScene = false;
 
+var progressPct = 0;
+var progressPct0 = 0;
 var dataProcessed = false;
 
 var maxTime = 0;
@@ -140,7 +143,7 @@ function defineParams(){
 		this.captureCanvas = false;
 		this.videoFramerate = 30;
 		this.videoDuration = 2;
-		this.videoFormat = 'png';
+		this.videoFormat = 'gif';
         this.videoFrame = 0;
 
 	    this.screenshot = function(){
@@ -197,7 +200,7 @@ function defineParams(){
                 // see Firefly renderLoop.js and applyUISelections.js for recordingCircle
 
                 //initialize the progress bar
-                d3.select('#progressFill').style('width', '0%');
+                progressPct = 0;
                 d3.select('#progress').select('p').text('Capturing ...');
                 d3.select('#progress').style('display', 'block');
 
@@ -400,103 +403,104 @@ function setGlobalMinMaxTimeTolerance(tol = 0.1, Nignore = 50){
 
 }
 
+// break data processing into two parts
+function mapData(inputData){
+    // take the d3 csv format and create lists
+    parts = {};
+    parts.time = [];
+    partsKeys = [];
+    rs = [];
+    times = [];
+    IDs = [];
 
-function processData(inputData){
-    console.log('processing data ...')
-    dataProcessed = false;
-	parts = {};
-		
-    // for the loader
-	var dataSize = inputData.length - 1;
-
-    // reorganize
-	// get the times and particle names and positions
-	times = [];
-	partsKeys = [];
-
-    // try loading data in chunks so that we can get a progress bar to update!
-    var linesPerChunk = 500.; // some guess to what will make the loading bar look smooth
-    var chunks = Math.ceil(inputData.length/linesPerChunk);
-
-    for (var j = 0; j < chunks; j += 1){
-        (function(j){
-            setTimeout(function(){
-                for (var k = 0; k < linesPerChunk; k += 1){
-                    var i = j*linesPerChunk + k;
-                    var d = inputData[i];
-                    if (d){
-                        if (!times.includes(+d.time)) times.push(+d.time);
-                        if (!partsKeys.includes(d.ID)) {
-                            partsKeys.push(d.ID);
-                            parts[d.ID] = {};
-                            parts[d.ID].r = [];
-                        }
-                        parts[d.ID].r.push([d.x, d.y, d.z]);
-                    }
-
-                    // update the loader
-                    if (k == linesPerChunk - 1)  d3.select('#progressFill').style('width', i/dataSize*100 + '%');
-
-                    // finish data processing when at the end
-                    if (i == dataSize) {
-                        parts.time = times;
-                        //random colors
-                        partsKeys.forEach( function(p,i) {
-                            parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
-                        })
-                        dataProcessed = true;
-                    }
-                }
-            }, 100)
-        }(j))
-    }
-
+    inputData.map(function(d, i) {
+        rs.push([+d.x, +d.y, +d.z]);
+        IDs.push(d.ID);
+        times.push(+d.time);
+    })
+}
+function transposeData(){
+    // take the lists and create an object with keys from IDs
+    parts.time = [...new Set(times)];
+    partsKeys = [...new Set(IDs)];
+    // divide up the particles by ID
+    var foo = d3.zip(IDs, rs);
+    partsKeys.forEach(function(p){
+        parts[p] = {};
+        parts[p].r = foo.filter(function(x) { return x[0] == p}).map(function(x){ return x[1]});
+        //random colors
+        parts[p].color = new THREE.Color(Math.random(), Math.random(), Math.random());
+    })
 }
 
-function startPromises(callback, canvas){
+
+function loadSystem(callback, canvas, inputData){
+    // create a large promise string so data and canvas are loaded and created in sequence
+    
+
     let step1 = new Promise(function(resolve, reject) {
-        console.log('setting min max time ... ')
-        setGlobalMinMaxTimeTolerance();
-        resolve('done');
-        reject('error');
+        setTimeout(function(){
+            console.log('mapping data ...');
+            mapData(inputData);
+            progressPct = 30;
+            resolve('done');
+            reject('error');
+        }, 200);
     });
     let step2 = new Promise(function(resolve, reject) {
-        console.log('defining params ...')
-        defineParams();
-        resolve('done');
-        reject('error');
+        setTimeout(function(){
+            console.log('transposing data ...');
+            transposeData();
+            dataProcessed = true;
+            progressPct = 60;
+            resolve('done');
+            reject('error');
+        }, 200);
     });
     let step3 = new Promise(function(resolve, reject) {
-        console.log('initializing interps ... ')
-        initInterps();
-        resolve('done');
-        reject('error');
+        setTimeout(function(){
+            console.log('setting min max time ... ');
+            setGlobalMinMaxTimeTolerance();
+            progressPct = 70;
+            resolve('done');
+            reject('error');
+        }, 200);
+    });
+    let step4 = new Promise(function(resolve, reject) {
+        setTimeout(function(){
+            console.log('defining params ...');
+            defineParams();
+            progressPct = 80;
+            resolve('done');
+            reject('error');
+        }, 200);
+    });
+    let step5 = new Promise(function(resolve, reject) {
+        setTimeout(function(){
+            console.log('initializing interps ... ');
+            initInterps();
+            progressPct = 90;
+            resolve('done');
+            reject('error');
+        }, 200);
     });	
 
     step1.then(function(value){
         step2.then(function(value){
             step3.then(function(value){
-                callback(canvas);
+                step4.then(function(value){
+                    step5.then(function(value){
+                        callback(canvas);
+                    },function(error){})
+                },function(error){})
             },function(error){})
         },function(error){})
     },function(error){})
 }
 
-function loadSystem(callback, canvas, inputData){
-	
-    // processing data outside of promise so that I can have a loading progress bar!
-    processData(inputData);
-    var wait = setInterval(function(){
-        if (dataProcessed){
-            clearInterval(wait);
-            startPromises(callback, canvas)
-        }
-    })
-
-
-}
 
 function loadDataFromFile(callback, canvas){
+    progressFrac = 0;
 
 	d3.csv('data/ScatterParts.csv', function(partscsv){
 		// file must have columns of ID, time, x,y,z 
@@ -509,12 +513,17 @@ function loadDataFromFile(callback, canvas){
 function WebGLStart(canvas){
 	console.log('starting WebGL...');
 
-	d3.select('#progress').style('display','none');
+    // finish the progress indicator
+    progressPct = 100;
+    setTimeout(function(){
+        d3.select('#progress').style('display','none');
+        progressPct = 0;
+    },200);
 
 	init(canvas);
 
-//begin the animation
-	animate();
+    //begin the animation
+    renderScene = true;
 }
 
 

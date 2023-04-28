@@ -1,29 +1,33 @@
 
 function animate(time) {
-	animateID = requestAnimationFrame( animate );
-    update(time);
-	render();
+	animateID = requestAnimationFrame(animate);
+    if (progressPct0 != progressPct) updateProgress();
+
+    if (renderScene){
+        update(time);
+        render();
+    }
 }
 
 function update(time){
 	keyboard.update();
-	if ( keyboard.down("C") ) console.log(camera.position, camera.rotation)
+	if (keyboard.down("C")) console.log(camera.position, camera.rotation)
 
 	// control the time
-	if ( keyboard.down("space")) params.play = !params.play;
-	if ( keyboard.pressed("T") && keyboard.pressed("right") && params.timeYr < params.maxTime) {
+	if (keyboard.down("space")) params.play = !params.play;
+	if (keyboard.pressed("T") && keyboard.pressed("right") && params.timeYr < params.maxTime) {
 		params.timeYr += params.timeStep;
 		params.redraw();
 	}
-	if ( keyboard.pressed("T") && keyboard.pressed("left")  && params.timeYr > params.minTime) {
+	if (keyboard.pressed("T") && keyboard.pressed("left")  && params.timeYr > params.minTime) {
 		params.timeYr -= params.timeStep;
 		params.redraw();
 	}
-	if ( keyboard.pressed("T") && keyboard.down("up")  ) {
+	if (keyboard.pressed("T") && keyboard.down("up")) {
 		params.timeStepFac *= 2;
 		params.updateTimeStep();
 	}
-	if ( keyboard.pressed("T") && keyboard.down("down")  ) {
+	if (keyboard.pressed("T") && keyboard.down("down")) {
 		params.timeStepFac /= 2;
 		params.updateTimeStep();
 	}
@@ -39,14 +43,14 @@ function render() {
 	if (params.captureCanvas){
 		var screenWidth = window.innerWidth;
 		var screenHeight = window.innerHeight;
-		var aspect = screenWidth / screenHeight;
+		var aspect = screenWidth/screenHeight;
 		
         // render at the desired resolution and capture the frame
 		params.renderer.setSize(params.captureWidth, params.captureHeight);
-		camera.aspect = params.captureWidth / params.captureHeight;;
+		camera.aspect = params.captureWidth/params.captureHeight;;
 		camera.updateProjectionMatrix();
-		params.renderer.render( scene, camera );
-		capturer.capture( params.renderer.domElement );
+		params.renderer.render(scene, camera);
+		capturer.capture(params.renderer.domElement);
 
         // then go back to the screen size
 		params.renderer.setSize(screenWidth, screenHeight);
@@ -56,14 +60,14 @@ function render() {
 
         // take care of the progress bar
         params.videoFrame += 1;
-        d3.select('#progressFill').style('width', params.videoFrame/(params.videoDuration*params.videoFramerate)*100 + '%');
+        progressPct = params.videoFrame/(params.videoDuration*params.videoFramerate)*100;
 
         if (params.videoFrame >= params.videoDuration*params.videoFramerate) endRecording();
 
 
 	}
 
-    params.renderer.render( scene, camera );
+    params.renderer.render(scene, camera);
 
 }
 
@@ -72,7 +76,7 @@ function endRecording(){
     
     // update the text in the progress bar
     d3.select('#progress').select('p').text('Rendering ...');
-    d3.select('#progressFill').style('width', '100%');
+    progressPct = 100.;
 
     // save the video
     capturer.stop();
@@ -85,6 +89,8 @@ function endRecording(){
 
         //hide the progress indicator
         d3.select('#progress').style('display','none');
+        progressPct = 0;
+        updateProgress();
     });
 
     // reset
@@ -94,3 +100,13 @@ function endRecording(){
 
         
 }
+
+function updateProgress(){
+    console.log('progress = ', progressPct);
+    progressPct0 = progressPct;
+    d3.select('#progressFill').style('width', progressPct + '%');
+}
+
+
+
+animate();

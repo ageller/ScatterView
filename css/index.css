@@ -41,6 +41,10 @@ canvas{
 #progressFill{
     height:100%; 
     background-color:#439A86; 
+    -webkit-transition: width 0.3s ease-in-out;
+    -moz-transition: width 0.3s ease-in-out;
+    -o-transition: width 0.3s ease-in-out;
+    transition: width 0.3s ease-in-out;
 }
 
 

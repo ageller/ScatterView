@@ -15,6 +15,11 @@ function dropHandler(){
     d3.event.preventDefault();
     if (d3.event.dataTransfer.items) {
         console.log('have dropped items');
+        // enable the progress bar
+        d3.select('#progress').style('display','block');
+        d3.select('#progress').select('p').text('Loading ...');
+        progressPct = 0;
+
         // Use DataTransferItemList interface to access the file(s)
         [...d3.event.dataTransfer.items].forEach(function(item, i){
           // If dropped items aren't files, reject them
@@ -23,8 +28,8 @@ function dropHandler(){
             console.log(`file[${i}].name = ${file.name}`, item);
             var reader = new FileReader();
             reader.onload = function(event) {
-            console.log('parsing data...')
-            var partscsv = d3.csvParse(event.target.result);
+                console.log('parsing data...')
+                var partscsv = d3.csvParse(event.target.result);
                 restartViewer(partscsv)
             };
             reader.readAsText(item.getAsFile())
@@ -52,15 +57,13 @@ function dragLeaveHandler(){
 
 function restartViewer(partscsv){
     console.log('restarting viewer...')
-
-    d3.select('#progressFill').style('width', '0%');
-    d3.select('#progress').select('p').text('Loading ...');
-    d3.select('#progress').style('display','block')
+    progressPct = 5;
 
     // destroy the GUI
     // remove all objects from the scene
     // stop the animation
-    cancelAnimationFrame(animateID);
+    // cancelAnimationFrame(animateID);
+    renderScene = false;
     gui.destroy();
     d3.select('#contentContainer').html("")
 
@@ -71,7 +74,9 @@ function restartViewer(partscsv){
     minTime = 1e10;
 
     console.log('starting promises...');
-    loadSystem(WebGLStart, window, partscsv)
+    setTimeout(function(){
+        loadSystem(WebGLStart, window, partscsv);
+    }, 100);
     
 }
 
