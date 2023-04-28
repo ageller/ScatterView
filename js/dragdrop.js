@@ -53,8 +53,9 @@ function dragLeaveHandler(){
 function restartViewer(partscsv){
     console.log('restarting viewer...')
 
-    d3.select('#loader').style('display','block')
-    d3.select('#loaderFill').style('width', '0%');
+    d3.select('#progressFill').style('width', '0%');
+    d3.select('#progress').select('p').text('Loading ...');
+    d3.select('#progress').style('display','block')
 
     // destroy the GUI
     // remove all objects from the scene

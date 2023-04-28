@@ -18,7 +18,7 @@ canvas{
 	height: 100%;
 }
 
-#loader{
+#progress{
     position:absolute; 
     left:2vw; 
     bottom:2vw; 
@@ -27,7 +27,7 @@ canvas{
     border:1px solid white;
 }
 
-#loader p{
+#progress p{
     font-size:30px;
     line-height:50px;
     margin-top: -50px;
@@ -38,7 +38,7 @@ canvas{
     
 }
 
-#loaderFill{
+#progressFill{
     height:100%; 
     background-color:#439A86; 
 }

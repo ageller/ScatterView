@@ -135,13 +135,14 @@ function defineParams(){
 		this.rotateSpeed = 1.;
 		this.panSpeed = 0.3;
 		this.stereoSep = 0.064;
-		this.filename = "test.png";
+		this.filename = "test";
 		this.captureWidth = 1024;
 		this.captureHeight = 1024;
 		this.captureCanvas = false;
 		this.videoFramerate = 30;
 		this.videoDuration = 2;
 		this.videoFormat = 'png';
+        this.videoFrame = 0;
 
 	    this.screenshot = function(){
 			var imgData, imgNode;
@@ -149,20 +150,7 @@ function defineParams(){
 			var strMime = "image/png";
 			var screenWidth = window.innerWidth;
 			var screenHeight = window.innerHeight;
-			var aspect = screenWidth / screenHeight;
-
-			var saveFile = function (strData, filename) {
-				var link = document.createElement('a');
-				if (typeof link.download === 'string') {
-					document.body.appendChild(link); //Firefox requires the link to be in the body
-					link.download = filename;
-					link.href = strData;
-					link.click();
-					document.body.removeChild(link); //remove the link when done
-				} else {
-					location.replace(uri);
-				}
-			}
+			var aspect = screenWidth / screenHeight
 
 
 			try {
@@ -191,15 +179,28 @@ function defineParams(){
 
 		this.recordVideo = function(){
 
+            // I want to create another progress bar
+            // I solved this in Firefly (with much code!)
+            // Firefly has a circle, but here I think I'd prefer a simple bar at the bottom (like our loading bar)
+            // maybe I should rename the loading bar to a progress bar and just use it here as well
+            // then I could have the text change in JS (Loading... vs. Recording...)
+            // see Firefly renderLoop.js and applyUISelections.js for recordingCircle
+
+            //initialize the progress bar
+            d3.select('#progressFill').style('width', '0%');
+            d3.select('#progress').select('p').text('Capturing ...');
+            d3.select('#progress').style('display', 'block');
+
 			params.captureCanvas = true;
+            params.videoFrame = 0;
 			capturer = new CCapture( { 
 				format: params.videoFormat, 
 				workersPath: 'resources/CCapture/',
-				framerate: params.videoFramerate,
-				name: params.filename,
-				timeLimit: params.videoDuration,
-				autoSaveTime: params.videoDuration,
 				verbose: true,
+				// framerate: params.videoFramerate,
+				// name: params.filename,
+				// timeLimit: params.videoDuration,
+				// autoSaveTime: params.videoDuration,
 			} );
 
 			capturer.start();
@@ -285,14 +286,14 @@ function defineParams(){
 		gui.remember(params);
 
 		var timeGUI = gui.addFolder('Time controls');
-		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).name("Time").listen().onChange(params.redraw);
+		timeGUI.add( params, 'timeYr', params.minTime, params.maxTime).name("Time (yr)").listen().onChange(params.redraw);
 		timeGUI.add( params, 'timeStepUnit', {"Hour": 1./8760., "Day": 1./365.24, "Year": 1, "Million Years": 1e6, } ).name("Time Step Unit").onChange(params.updateTimeStep);
-		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).name("Time Step Factor").listen().onChange(params.updateTimeStep);
+		timeGUI.add( params, 'timeStepFac', 0, 1e4 ).name("Time Step Amount").listen().onChange(params.updateTimeStep);
 		timeGUI.add( params, 'play').name("Play").listen();
 
 		var pointLineGUI = gui.addFolder('Points and Lines');
 		pointLineGUI.add( params, 'lineWidth', 1, 10).name("Line Width").onChange( params.redraw );
-		params.lineGUI = pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime - params.minTime).name("Line Length").onChange( params.updateLine );
+		params.lineGUI = pointLineGUI.add( params, 'lineLengthYr', 0, params.maxTime - params.minTime).name("Line Length (yr)").onChange( params.updateLine );
 		pointLineGUI.add( params, 'lineAlpha', 0, 1.).name("Line Opacity").onChange( params.redraw );
 		// pointLineGUI.add( params, 'pointsSize', 0, 100.).onChange( params.redraw );
 		pointLineGUI.add( params, 'pointsAlpha', 0, 1.).name("Points Opacity").onChange( params.redraw );
@@ -312,10 +313,10 @@ function defineParams(){
 
 		var captureGUI = gui.addFolder('Capture');
 		captureGUI.add( params, 'filename').name("File Name");
-		captureGUI.add( params, 'captureWidth').name("Capture Width");
-		captureGUI.add( params, 'captureHeight').name("Capture Height");
-		captureGUI.add( params, 'videoDuration').name("Video Duration");
-		captureGUI.add( params, 'videoFramerate').name("Video Framerate");
+		captureGUI.add( params, 'captureWidth').name("Capture Width (px)");
+		captureGUI.add( params, 'captureHeight').name("Capture Height (px)");
+		captureGUI.add( params, 'videoDuration').name("Video Duration (s)");
+		captureGUI.add( params, 'videoFramerate').name("Video Framerate (fps)");
 		captureGUI.add( params, 'videoFormat', {"gif":"gif", "jpg":"jpg", "png":"png"} ).name("Video Format")
 		captureGUI.add( params, 'screenshot').name("Take Screenshot");
 		captureGUI.add( params, 'recordVideo').name("Start Recording Video");
@@ -423,7 +424,7 @@ function processData(inputData){
                     }
 
                     // update the loader
-                    if (k == linesPerChunk - 1)  d3.select('#loaderFill').style('width', i/dataSize*100 + '%');
+                    if (k == linesPerChunk - 1)  d3.select('#progressFill').style('width', i/dataSize*100 + '%');
 
                     // finish data processing when at the end
                     if (i == dataSize) {
@@ -495,14 +496,29 @@ function loadDataFromFile(callback, canvas){
 }
 
 function WebGLStart(canvas){
-	console.log('starting WebGL...')
+	console.log('starting WebGL...');
 
-	d3.select('#loader').style('display','none')
+	d3.select('#progress').style('display','none');
 
 	init(canvas);
 
 //begin the animation
 	animate();
+}
+
+
+// download a file
+function saveFile(strData, filename){
+    var link = document.createElement('a');
+    if (typeof link.download === 'string') {
+        document.body.appendChild(link); //Firefox requires the link to be in the body
+        link.download = filename + '.png';
+        link.href = strData;
+        link.click();
+        document.body.removeChild(link); //remove the link when done
+    } else {
+        location.replace(uri);
+    }
 }
 
 //////this will load the data, and then start the WebGL rendering
