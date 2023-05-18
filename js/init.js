@@ -349,7 +349,7 @@ function defineParams(){
 
 function setGlobalMinMaxTime(){
 	for (var i = 0; i< parts.time.length; i++){
-		var checkTime = parts.time[i] - 1e-10;
+		var checkTime = +parts.time[i];
 		if (checkTime > maxTime) maxTime = checkTime;
 		if (checkTime < minTime) minTime = checkTime;
 	}
