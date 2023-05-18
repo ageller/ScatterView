@@ -460,7 +460,8 @@ function loadSystem(callback, canvas, inputData){
     let step3 = new Promise(function(resolve, reject) {
         setTimeout(function(){
             console.log('setting min max time ... ');
-            setGlobalMinMaxTimeTolerance();
+            //setGlobalMinMaxTimeTolerance();
+            setGlobalMinMaxTime();
             progressPct = 70;
             resolve('done');
             reject('error');
