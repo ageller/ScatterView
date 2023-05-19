@@ -1,4 +1,4 @@
-# Scatter
+# ScatterView
 
 ![banner](banner.png)
 
